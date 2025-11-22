@@ -42,9 +42,13 @@ const features = [
 
 const Features = () => {
   return (
-    <section className="py-20 px-4 bg-secondary">
-      <div className="container mx-auto">
-        <div className="text-center mb-12">
+    <section className="py-24 px-4 bg-background relative overflow-hidden">
+      {/* Background decoration */}
+      <div className="absolute top-0 right-0 w-96 h-96 bg-primary/5 rounded-full blur-3xl"></div>
+      <div className="absolute bottom-0 left-0 w-96 h-96 bg-accent/5 rounded-full blur-3xl"></div>
+      
+      <div className="container mx-auto relative z-10">
+        <div className="text-center mb-16">
           <h2 className="text-4xl md:text-5xl font-bold text-foreground mb-4">
             Everything You Need, One Platform
           </h2>
@@ -53,22 +57,27 @@ const Features = () => {
           </p>
         </div>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {features.map((feature, index) => (
-            <Card 
-              key={index} 
-              className="bg-gradient-card border-border hover:shadow-lg transition-all hover:scale-105 cursor-pointer group"
+            <div 
+              key={index}
+              className="group relative"
             >
-              <CardHeader>
-                <div className={`${feature.color} mb-4 group-hover:animate-float`}>
-                  {feature.icon}
-                </div>
-                <CardTitle className="text-xl">{feature.title}</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <CardDescription className="text-base">{feature.description}</CardDescription>
-              </CardContent>
-            </Card>
+              <div className="absolute -inset-0.5 bg-gradient-to-r from-primary/20 to-accent/20 rounded-2xl blur opacity-0 group-hover:opacity-100 transition duration-500"></div>
+              <Card 
+                className="relative bg-white dark:bg-slate-900 border-border hover:shadow-xl transition-all duration-300 hover:scale-105 cursor-pointer h-full"
+              >
+                <CardHeader>
+                  <div className={`${feature.color} mb-4 group-hover:scale-110 group-hover:rotate-6 transition-transform duration-300`}>
+                    {feature.icon}
+                  </div>
+                  <CardTitle className="text-xl text-foreground">{feature.title}</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <CardDescription className="text-base text-muted-foreground">{feature.description}</CardDescription>
+                </CardContent>
+              </Card>
+            </div>
           ))}
         </div>
       </div>

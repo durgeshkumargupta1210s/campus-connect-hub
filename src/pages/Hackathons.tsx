@@ -1,9 +1,10 @@
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Trophy, Calendar, Users, Award, Code2, Rocket } from "lucide-react";
+import { Trophy, Calendar, Users, Code2, Rocket, Target, Zap } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
 
 const hackathons = [
   {
@@ -11,184 +12,255 @@ const hackathons = [
     date: "March 20-21, 2024",
     duration: "24 hours",
     prize: "₹50,000",
-    participants: "120 registered",
+    participants: 120,
     difficulty: "Advanced",
     tags: ["AI", "Machine Learning", "Deep Learning"],
     status: "Open",
+    description: "Build intelligent solutions using cutting-edge AI and ML technologies"
   },
   {
     title: "Web3 Hackathon",
     date: "April 5-6, 2024",
     duration: "36 hours",
     prize: "₹75,000",
-    participants: "85 registered",
+    participants: 85,
     difficulty: "Intermediate",
     tags: ["Blockchain", "Smart Contracts", "DeFi"],
     status: "Open",
+    description: "Create decentralized applications and explore blockchain possibilities"
   },
   {
     title: "Mobile App Challenge",
     date: "April 15-16, 2024",
     duration: "48 hours",
     prize: "₹60,000",
-    participants: "65 registered",
+    participants: 65,
     difficulty: "All Levels",
     tags: ["React Native", "Flutter", "Mobile Dev"],
     status: "Open",
+    description: "Develop innovative mobile applications for iOS and Android"
   },
 ];
 
-const contests = [
-  { title: "Coding Sprint", date: "March 25, 2024", prize: "₹20,000" },
-  { title: "UI/UX Design Contest", date: "March 28, 2024", prize: "₹15,000" },
-  { title: "Data Science Challenge", date: "April 2, 2024", prize: "₹30,000" },
+const timeline = [
+  { phase: "Registration", duration: "2 weeks before", color: "bg-primary" },
+  { phase: "Event Day", duration: "24-48 hours", color: "bg-accent" },
+  { phase: "Judging", duration: "48 hours after", color: "bg-primary" },
+  { phase: "Results", duration: "1 week after", color: "bg-accent" },
 ];
 
 const Hackathons = () => {
+  const navigate = useNavigate();
+  
   return (
     <div className="min-h-screen flex flex-col">
       <Navbar />
       
       <main className="flex-1">
         {/* Hero Section */}
-        <section className="bg-gradient-hero py-20 px-4">
-          <div className="container mx-auto text-center">
-            <Trophy className="w-20 h-20 text-white mx-auto mb-6 animate-float" />
-            <h1 className="text-5xl md:text-6xl font-bold text-white mb-6">
-              Hackathons & Contests
-            </h1>
-            <p className="text-xl text-white/90 max-w-2xl mx-auto mb-8">
-              Compete, innovate, and win! Join exciting hackathons and coding challenges to showcase your skills.
-            </p>
-            <Button size="lg" className="bg-accent hover:bg-accent/90 text-accent-foreground">
-              Browse All Events
-            </Button>
+        <section className="relative w-full min-h-[calc(100vh-64px)] flex items-center justify-center overflow-hidden bg-gradient-hero pt-0">
+          <div className="absolute inset-0 opacity-20">
+            <div className="absolute top-10 right-10 w-40 h-40 bg-white rounded-full mix-blend-multiply filter blur-2xl opacity-20"></div>
+            <div className="absolute bottom-10 left-10 w-40 h-40 bg-white rounded-full mix-blend-multiply filter blur-2xl opacity-20"></div>
+          </div>
+          
+          <div className="container mx-auto px-4 py-24 relative z-10">
+            <div className="text-center max-w-4xl mx-auto animate-fade-in">
+              <div className="inline-flex items-center gap-2 bg-white/20 backdrop-blur-sm px-4 py-2 rounded-full mb-6">
+                <Rocket className="w-4 h-4 text-white" />
+                <span className="text-white text-sm font-medium">Build & Innovate</span>
+              </div>
+              
+              <h1 className="text-5xl md:text-7xl font-bold text-white mb-6">
+                Hackathons & <br />
+                <span className="bg-gradient-accent bg-clip-text text-transparent">Competitions</span>
+              </h1>
+              
+              <p className="text-xl md:text-2xl text-white/90 mb-8 max-w-2xl mx-auto">
+                Showcase your skills, build amazing projects, and win exciting prizes. Your next big opportunity awaits!
+              </p>
+              
+              <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+                <Button 
+                  size="lg" 
+                  variant="outline" 
+                  className="bg-white/10 border-white/20 text-white hover:bg-white/20 backdrop-blur-sm"
+                  onClick={() => document.getElementById('upcoming-hackathons')?.scrollIntoView({ behavior: 'smooth' })}
+                >
+                  Explore Events
+                </Button>
+              </div>
+              
+              <div className="grid grid-cols-3 gap-6 mt-12 max-w-2xl mx-auto">
+                <div className="bg-white/10 backdrop-blur-sm p-4 rounded-xl border border-white/20">
+                  <div className="text-3xl font-bold text-white">15+</div>
+                  <div className="text-white/80 text-sm">Events/Year</div>
+                </div>
+                <div className="bg-white/10 backdrop-blur-sm p-4 rounded-xl border border-white/20">
+                  <div className="text-3xl font-bold text-accent">₹5L+</div>
+                  <div className="text-white/80 text-sm">Total Prize Pool</div>
+                </div>
+                <div className="bg-white/10 backdrop-blur-sm p-4 rounded-xl border border-white/20">
+                  <div className="text-3xl font-bold text-white">1000+</div>
+                  <div className="text-white/80 text-sm">Participants</div>
+                </div>
+              </div>
+            </div>
           </div>
         </section>
 
-        {/* Active Hackathons */}
-        <section className="py-20 px-4 bg-background">
-          <div className="container mx-auto">
-            <div className="flex justify-between items-center mb-12">
-              <h2 className="text-4xl font-bold">Active Hackathons</h2>
-              <Badge className="bg-accent text-accent-foreground">3 Open</Badge>
+        {/* Upcoming Hackathons */}
+        <section id="upcoming-hackathons" className="py-24 px-4 bg-background relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-96 h-96 bg-primary/5 rounded-full blur-3xl"></div>
+          
+          <div className="container mx-auto relative z-10">
+            <div className="text-center mb-16">
+              <h2 className="text-4xl md:text-5xl font-bold text-foreground mb-4">
+                Upcoming Hackathons
+              </h2>
+              <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+                Mark your calendar and register for the most exciting hacking events
+              </p>
             </div>
             
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              {hackathons.map((hackathon, index) => (
-                <Card key={index} className="bg-gradient-card border-border hover:shadow-lg transition-all hover:scale-105 group">
-                  <CardHeader>
-                    <div className="flex justify-between items-start mb-2">
-                      <Badge className="bg-primary text-primary-foreground">{hackathon.status}</Badge>
-                      <Badge variant="outline">{hackathon.difficulty}</Badge>
-                    </div>
-                    <CardTitle className="text-2xl mb-2">{hackathon.title}</CardTitle>
-                    <CardDescription className="text-base">
-                      <div className="flex items-center gap-2 mt-2">
-                        <Calendar className="w-4 h-4" />
-                        <span>{hackathon.date}</span>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+              {hackathons.map((hack, index) => (
+                <div key={index} className="group">
+                  <div className="absolute -inset-0.5 bg-gradient-to-r from-primary/20 to-accent/20 rounded-2xl blur opacity-0 group-hover:opacity-100 transition"></div>
+                  <Card className="relative bg-white dark:bg-slate-900 border-border hover:shadow-xl transition-all group-hover:scale-105 h-full flex flex-col">
+                    <CardHeader>
+                      <div className="flex items-center justify-between mb-4">
+                        <Badge className="bg-accent/20 text-accent hover:bg-accent/30">{hack.status}</Badge>
+                        <Badge variant="outline">{hack.difficulty}</Badge>
                       </div>
-                    </CardDescription>
-                  </CardHeader>
-                  
-                  <CardContent className="space-y-4">
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-muted-foreground">Duration:</span>
-                      <span className="font-semibold">{hackathon.duration}</span>
-                    </div>
-                    
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-muted-foreground">Prize Pool:</span>
-                      <span className="font-bold text-accent text-lg">{hackathon.prize}</span>
-                    </div>
-                    
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <Users className="w-4 h-4" />
-                      <span>{hackathon.participants}</span>
-                    </div>
-                    
-                    <div className="flex flex-wrap gap-2">
-                      {hackathon.tags.map((tag, idx) => (
-                        <Badge key={idx} variant="secondary" className="text-xs">
-                          {tag}
-                        </Badge>
-                      ))}
-                    </div>
-                  </CardContent>
-                  
-                  <CardFooter>
-                    <Button className="w-full bg-primary hover:bg-primary/90 text-primary-foreground">
-                      Register Now
-                    </Button>
-                  </CardFooter>
-                </Card>
-              ))}
-            </div>
-          </div>
-        </section>
+                      <CardTitle className="text-2xl text-foreground">{hack.title}</CardTitle>
+                      <CardDescription className="text-base mt-2">{hack.description}</CardDescription>
+                    </CardHeader>
+                    <CardContent className="flex-1">
+                      <div className="space-y-4">
+                        <div className="flex items-center gap-3 text-foreground">
+                          <Calendar className="w-5 h-5 text-primary" />
+                          <div>
+                            <div className="text-sm text-muted-foreground">Date</div>
+                            <div className="font-semibold">{hack.date}</div>
+                          </div>
+                        </div>
+                        
+                        <div className="flex items-center gap-3 text-foreground">
+                          <Zap className="w-5 h-5 text-accent" />
+                          <div>
+                            <div className="text-sm text-muted-foreground">Duration</div>
+                            <div className="font-semibold">{hack.duration}</div>
+                          </div>
+                        </div>
+                        
+                        <div className="flex items-center gap-3 text-foreground">
+                          <Trophy className="w-5 h-5 text-primary" />
+                          <div>
+                            <div className="text-sm text-muted-foreground">Prize Pool</div>
+                            <div className="font-semibold">{hack.prize}</div>
+                          </div>
+                        </div>
+                        
+                        <div className="flex items-center gap-3 text-foreground">
+                          <Users className="w-5 h-5 text-accent" />
+                          <div>
+                            <div className="text-sm text-muted-foreground">Registrations</div>
+                            <div className="font-semibold">{hack.participants}+ registered</div>
+                          </div>
+                        </div>
+                        
+                        <div className="pt-4 border-t border-border">
+                          <div className="text-sm text-muted-foreground mb-2">Technologies</div>
+                          <div className="flex flex-wrap gap-2">
+                            {hack.tags.map((tag, i) => (
+                              <Badge key={i} variant="secondary" className="text-xs">{tag}</Badge>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    </CardContent>
 
-        {/* Quick Contests */}
-        <section className="py-20 px-4 bg-secondary">
-          <div className="container mx-auto">
-            <h2 className="text-4xl font-bold mb-12">Quick Contests</h2>
-            
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {contests.map((contest, index) => (
-                <Card key={index} className="bg-gradient-card border-border hover:shadow-lg transition-all group">
-                  <CardHeader>
-                    <Code2 className="w-8 h-8 text-primary mb-2 group-hover:animate-float" />
-                    <CardTitle className="text-xl">{contest.title}</CardTitle>
-                    <CardDescription>{contest.date}</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="flex items-center gap-2">
-                      <Award className="w-5 h-5 text-accent" />
-                      <span className="font-bold text-accent text-lg">{contest.prize}</span>
-                    </div>
-                  </CardContent>
-                  <CardFooter>
-                    <Button variant="outline" className="w-full">
-                      Learn More
-                    </Button>
-                  </CardFooter>
-                </Card>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* Why Participate */}
-        <section className="py-20 px-4 bg-background">
-          <div className="container mx-auto">
-            <h2 className="text-4xl font-bold text-center mb-12">Why Participate?</h2>
-            
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto">
-              {[
-                {
-                  icon: <Rocket className="w-12 h-12" />,
-                  title: "Build Your Portfolio",
-                  description: "Create impressive projects that stand out to recruiters and showcase your skills.",
-                },
-                {
-                  icon: <Users className="w-12 h-12" />,
-                  title: "Network & Learn",
-                  description: "Connect with like-minded developers, mentors, and industry professionals.",
-                },
-                {
-                  icon: <Trophy className="w-12 h-12" />,
-                  title: "Win Prizes",
-                  description: "Compete for cash prizes, internships, and recognition from top companies.",
-                },
-              ].map((benefit, index) => (
-                <div key={index} className="text-center">
-                  <div className="text-primary mb-4 flex justify-center">{benefit.icon}</div>
-                  <h3 className="text-2xl font-bold mb-3">{benefit.title}</h3>
-                  <p className="text-muted-foreground">{benefit.description}</p>
+                  </Card>
                 </div>
               ))}
             </div>
           </div>
         </section>
+
+
+
+        {/* Timeline */}
+        <section className="py-24 px-4 bg-background">
+          <div className="container mx-auto">
+            <div className="text-center mb-16">
+              <h2 className="text-4xl md:text-5xl font-bold text-foreground mb-4">
+                Hackathon Timeline
+              </h2>
+              <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+                Here's what happens at each stage
+              </p>
+            </div>
+            
+            <div className="max-w-4xl mx-auto">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                {timeline.map((item, index) => (
+                  <div key={index} className="relative">
+                    {index < timeline.length - 1 && (
+                      <div className="hidden lg:block absolute top-1/3 -right-2 w-4 h-0.5 bg-gradient-to-r from-primary to-accent"></div>
+                    )}
+                    <Card className="bg-white dark:bg-slate-900 border-border">
+                      <CardHeader className="text-center">
+                        <div className={`w-12 h-12 rounded-full flex items-center justify-center text-white font-bold mx-auto mb-4 ${item.color}`}>
+                          {index + 1}
+                        </div>
+                        <CardTitle className="text-lg text-foreground">{item.phase}</CardTitle>
+                      </CardHeader>
+                      <CardContent className="text-center">
+                        <p className="text-muted-foreground">{item.duration}</p>
+                      </CardContent>
+                    </Card>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Tips Section */}
+        <section className="py-24 px-4 bg-gradient-hero relative overflow-hidden">
+          <div className="absolute inset-0 opacity-10">
+            <div className="absolute top-1/2 left-1/2 w-96 h-96 bg-white rounded-full mix-blend-multiply filter blur-3xl transform -translate-x-1/2 -translate-y-1/2"></div>
+          </div>
+          
+          <div className="container mx-auto max-w-3xl relative z-10">
+            <div className="text-center mb-16">
+              <h2 className="text-4xl font-bold text-white mb-4">
+                Tips to Win
+              </h2>
+              <p className="text-xl text-white/90">
+                Follow these tips to ace your next hackathon
+              </p>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {[
+                { num: "1", title: "Form Strong Teams", desc: "Find teammates with complementary skills" },
+                { num: "2", title: "Plan Ahead", desc: "Have a clear project plan before you start" },
+                { num: "3", title: "Focus on MVP", desc: "Build a minimum viable product first" },
+                { num: "4", title: "Present Well", desc: "Your presentation matters as much as your code" },
+              ].map((tip, index) => (
+                <div key={index} className="bg-white/10 backdrop-blur-sm p-6 rounded-2xl border border-white/20 hover:bg-white/20 transition-all">
+                  <div className="text-4xl font-bold text-accent mb-4">{tip.num}</div>
+                  <h3 className="text-xl font-semibold text-white mb-2">{tip.title}</h3>
+                  <p className="text-white/80">{tip.desc}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+
       </main>
 
       <Footer />
