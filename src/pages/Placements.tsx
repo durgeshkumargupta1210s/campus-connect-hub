@@ -5,9 +5,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Briefcase, Calendar, MapPin, TrendingUp, Building2, GraduationCap, CheckCircle2, Zap } from "lucide-react";
 import { Link } from "react-router-dom";
+import { useEffect } from "react";
+import { initializeSampleOpportunities } from "@/utils/initializeSampleData";
 
 const placements = [
   {
+    id: '1',
     company: "Google",
     role: "Software Engineer Intern",
     location: "Bangalore",
@@ -19,6 +22,7 @@ const placements = [
     description: "Work with cutting-edge technologies at Google"
   },
   {
+    id: '2',
     company: "Microsoft",
     role: "Full Stack Developer",
     location: "Hyderabad",
@@ -30,6 +34,7 @@ const placements = [
     description: "Build scalable solutions for millions of users"
   },
   {
+    id: '3',
     company: "Amazon",
     role: "SDE I",
     location: "Mumbai",
@@ -49,6 +54,10 @@ const upcomingDrives = [
 ];
 
 const Placements = () => {
+  useEffect(() => {
+    initializeSampleOpportunities();
+  }, []);
+
   return (
     <div className="min-h-screen flex flex-col">
       <Navbar />
@@ -172,9 +181,11 @@ const Placements = () => {
                     </CardContent>
                     
                     <CardContent className="border-t border-border pt-4">
-                      <Button className="w-full bg-gradient-accent hover:opacity-90 text-white">
-                        Apply Now
-                      </Button>
+                      <Link to={`/opportunity/${placement.id}`}>
+                        <Button className="w-full bg-gradient-accent hover:opacity-90 text-white">
+                          View & Apply
+                        </Button>
+                      </Link>
                     </CardContent>
                   </Card>
                 </div>

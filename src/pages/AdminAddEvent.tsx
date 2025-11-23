@@ -7,30 +7,59 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, Upload, X, CheckCircle } from "lucide-react";
 import { useEventNotifications } from "@/hooks/useEventNotifications";
+import { useEvents } from "@/hooks/useEvents";
+import { eventService } from "@/services/eventService";
 
 const AddEventPage = () => {
   const navigate = useNavigate();
   const { notifyNewEvent } = useEventNotifications();
+  const { addEvent } = useEvents();
   const [successMessage, setSuccessMessage] = useState("");
   const [formData, setFormData] = useState({
     eventName: "",
     date: "",
     time: "",
     endTime: "",
+    duration: "",
     location: "",
     description: "",
-    category: "Fest",
+    category: "Hackathon",
     capacity: "",
     registrationFee: "",
+    prize: "",
+    difficulty: "All Levels",
     poster: null,
     tags: [],
     organizer: "",
     contactEmail: "",
     contactPhone: "",
+    // Hackathon specific
+    problemStatements: "",
+    judgesCriteria: "",
+    // Placement specific
+    company: "",
+    ctc: "",
+    positions: "",
+    eligibility: "",
+    jobProfile: "",
+    // Workshop specific
+    mentor: "",
+    materials: "",
+    prerequisites: "",
   });
 
   const [tagInput, setTagInput] = useState("");
-  const categories = ["Fest", "Hackathon", "Workshop", "Seminar", "Cultural", "Sports", "Talk", "Competition"];
+  
+  // All supported event categories
+  const categories = [
+    { name: "Hackathon", icon: "⚡", description: "Coding competition" },
+    { name: "Workshop", icon: "📚", description: "Learning session" },
+    { name: "Placement", icon: "💼", description: "Job opportunity" },
+    { name: "Seminar", icon: "🎤", description: "Knowledge sharing" },
+    { name: "Fest", icon: "🎉", description: "Cultural event" },
+    { name: "Talk", icon: "💬", description: "Speaker session" },
+    { name: "Competition", icon: "🏆", description: "Contest" },
+  ];
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -63,7 +92,51 @@ const AddEventPage = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log("Event Data:", formData);
+    
+    // Build event data with category-specific fields
+    const eventData = {
+      title: formData.eventName,
+      eventName: formData.eventName,
+      date: formData.date,
+      time: formData.time,
+      endTime: formData.endTime,
+      duration: formData.duration,
+      location: formData.location,
+      description: formData.description,
+      category: formData.category,
+      capacity: parseInt(formData.capacity) || 0,
+      registrationFee: formData.registrationFee,
+      prize: formData.prize,
+      difficulty: formData.difficulty,
+      tags: formData.tags,
+      organizer: formData.organizer,
+      contactEmail: formData.contactEmail,
+      contactPhone: formData.contactPhone,
+      status: "Open",
+      participants: 0,
+      // Category-specific fields
+      ...(formData.category === "Hackathon" && {
+        problemStatements: formData.problemStatements,
+        judgesCriteria: formData.judgesCriteria
+      }),
+      ...(formData.category === "Workshop" && {
+        mentor: formData.mentor,
+        prerequisites: formData.prerequisites,
+        materials: formData.materials
+      }),
+      ...(formData.category === "Placement" && {
+        company: formData.company,
+        ctc: formData.ctc,
+        positions: parseInt(formData.positions) || 0,
+        jobProfile: formData.jobProfile,
+        eligibility: formData.eligibility
+      })
+    };
+    
+    // Add event to storage service
+    const newEvent = addEvent(eventData);
+
+    console.log("Event Data:", newEvent);
     
     // Notify subscribers about the new event
     const notificationResult = await notifyNewEvent({
@@ -185,6 +258,29 @@ const AddEventPage = () => {
                   />
                 </div>
 
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label className="text-foreground font-semibold mb-2 block">Duration</Label>
+                    <Input
+                      name="duration"
+                      value={formData.duration}
+                      onChange={handleInputChange}
+                      placeholder="e.g., 24 hours, 2 days, 3 weeks"
+                      className="bg-background border-border"
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-foreground font-semibold mb-2 block">Prize Pool</Label>
+                    <Input
+                      name="prize"
+                      value={formData.prize}
+                      onChange={handleInputChange}
+                      placeholder="e.g., ₹50,000"
+                      className="bg-background border-border"
+                    />
+                  </div>
+                </div>
+
                 <div>
                   <Label className="text-foreground font-semibold mb-2 block">Description *</Label>
                   <textarea
@@ -206,7 +302,7 @@ const AddEventPage = () => {
                 <CardDescription>Category, capacity, and fees</CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div>
                     <Label className="text-foreground font-semibold mb-2 block">Category *</Label>
                     <select
@@ -218,8 +314,27 @@ const AddEventPage = () => {
                       required
                     >
                       {categories.map(cat => (
-                        <option key={cat} value={cat}>{cat}</option>
+                        <option key={cat.name} value={cat.name}>{cat.icon} {cat.name}</option>
                       ))}
+                    </select>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {categories.find(c => c.name === formData.category)?.description}
+                    </p>
+                  </div>
+
+                  <div>
+                    <Label className="text-foreground font-semibold mb-2 block">Difficulty Level</Label>
+                    <select
+                      name="difficulty"
+                      title="Select difficulty level"
+                      value={formData.difficulty}
+                      onChange={handleInputChange}
+                      className="w-full p-2 bg-background border border-border rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                    >
+                      <option value="All Levels">All Levels</option>
+                      <option value="Beginner">Beginner</option>
+                      <option value="Intermediate">Intermediate</option>
+                      <option value="Advanced">Advanced</option>
                     </select>
                   </div>
 
@@ -285,6 +400,144 @@ const AddEventPage = () => {
                 </div>
               </CardContent>
             </Card>
+
+            {/* Category-Specific Fields */}
+            {formData.category === "Hackathon" && (
+              <Card className="bg-white dark:bg-slate-900 border-border border-accent/50">
+                <CardHeader>
+                  <CardTitle className="text-foreground">Hackathon Details</CardTitle>
+                  <CardDescription>Hackathon-specific information</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <div>
+                    <Label className="text-foreground font-semibold mb-2 block">Problem Statements</Label>
+                    <textarea
+                      name="problemStatements"
+                      value={formData.problemStatements}
+                      onChange={handleInputChange}
+                      placeholder="List the problem statements or themes (one per line)..."
+                      className="w-full min-h-24 p-3 bg-background border border-border rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-foreground font-semibold mb-2 block">Judging Criteria</Label>
+                    <textarea
+                      name="judgesCriteria"
+                      value={formData.judgesCriteria}
+                      onChange={handleInputChange}
+                      placeholder="Describe how projects will be judged..."
+                      className="w-full min-h-24 p-3 bg-background border border-border rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                    />
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {formData.category === "Workshop" && (
+              <Card className="bg-white dark:bg-slate-900 border-border border-accent/50">
+                <CardHeader>
+                  <CardTitle className="text-foreground">Workshop Details</CardTitle>
+                  <CardDescription>Workshop-specific information</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <div>
+                    <Label className="text-foreground font-semibold mb-2 block">Mentor/Instructor Name</Label>
+                    <Input
+                      name="mentor"
+                      value={formData.mentor}
+                      onChange={handleInputChange}
+                      placeholder="Name of the workshop instructor"
+                      className="bg-background border-border"
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-foreground font-semibold mb-2 block">Prerequisites</Label>
+                    <textarea
+                      name="prerequisites"
+                      value={formData.prerequisites}
+                      onChange={handleInputChange}
+                      placeholder="Skills or knowledge required to attend..."
+                      className="w-full min-h-20 p-3 bg-background border border-border rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-foreground font-semibold mb-2 block">Materials Provided</Label>
+                    <textarea
+                      name="materials"
+                      value={formData.materials}
+                      onChange={handleInputChange}
+                      placeholder="Learning materials, resources, or tools provided..."
+                      className="w-full min-h-20 p-3 bg-background border border-border rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                    />
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {formData.category === "Placement" && (
+              <Card className="bg-white dark:bg-slate-900 border-border border-accent/50">
+                <CardHeader>
+                  <CardTitle className="text-foreground">Placement Details</CardTitle>
+                  <CardDescription>Job opportunity information</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <div>
+                    <Label className="text-foreground font-semibold mb-2 block">Company Name *</Label>
+                    <Input
+                      name="company"
+                      value={formData.company}
+                      onChange={handleInputChange}
+                      placeholder="Recruiting company name"
+                      className="bg-background border-border"
+                      required
+                    />
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <Label className="text-foreground font-semibold mb-2 block">CTC (Package)</Label>
+                      <Input
+                        name="ctc"
+                        value={formData.ctc}
+                        onChange={handleInputChange}
+                        placeholder="e.g., 8-12 LPA"
+                        className="bg-background border-border"
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-foreground font-semibold mb-2 block">Number of Positions</Label>
+                      <Input
+                        name="positions"
+                        type="number"
+                        value={formData.positions}
+                        onChange={handleInputChange}
+                        placeholder="e.g., 50"
+                        className="bg-background border-border"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <Label className="text-foreground font-semibold mb-2 block">Job Profile</Label>
+                    <Input
+                      name="jobProfile"
+                      value={formData.jobProfile}
+                      onChange={handleInputChange}
+                      placeholder="e.g., Software Engineer, Data Analyst"
+                      className="bg-background border-border"
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-foreground font-semibold mb-2 block">Eligibility Criteria</Label>
+                    <textarea
+                      name="eligibility"
+                      value={formData.eligibility}
+                      onChange={handleInputChange}
+                      placeholder="GPA requirements, branch eligibility, etc..."
+                      className="w-full min-h-20 p-3 bg-background border border-border rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                    />
+                  </div>
+                </CardContent>
+              </Card>
+            )}
 
             {/* Organizer Information */}
             <Card className="bg-white dark:bg-slate-900 border-border">

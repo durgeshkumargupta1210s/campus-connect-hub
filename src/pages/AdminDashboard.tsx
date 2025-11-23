@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -15,10 +15,14 @@ import {
   LayoutDashboard,
   Edit2,
   Trash2,
-  Eye
+  Eye,
+  Briefcase,
+  Building2
 } from "lucide-react";
-
-// Sample data
+import { registrationService } from "@/services/registrationService";
+import { eventService } from "@/services/eventService";
+import { groupRegistrationService } from "@/services/groupRegistrationService";
+import { useOpportunities } from "@/hooks/useOpportunities";
 const eventStats = [
   { label: "Total Events", value: "24", icon: Calendar, color: "text-primary" },
   { label: "Total Bookings", value: "1,250", icon: Users, color: "text-accent" },
@@ -65,6 +69,8 @@ const AdminDashboard = () => {
     { id: "overview", label: "Overview", icon: LayoutDashboard },
     { id: "events", label: "Events", icon: Calendar },
     { id: "bookings", label: "Bookings", icon: Users },
+    { id: "opportunities", label: "Opportunities", icon: Briefcase },
+    { id: "campus-drives", label: "Campus Drives", icon: Building2 },
     { id: "analytics", label: "Analytics", icon: BarChart3 },
   ];
 
@@ -144,7 +150,25 @@ const AdminDashboard = () => {
                 Add Event
               </Button>
             )}
-            {!activeTab.startsWith("events") && <div />}
+            {activeTab === "opportunities" && (
+              <Button 
+                onClick={() => navigate("/admin/add-opportunity")}
+                className="bg-gradient-accent hover:opacity-90 text-white flex items-center gap-2"
+              >
+                <Plus className="w-4 h-4" />
+                Add Opportunity
+              </Button>
+            )}
+            {activeTab === "campus-drives" && (
+              <Button 
+                onClick={() => navigate("/admin/add-campus-drive")}
+                className="bg-gradient-accent hover:opacity-90 text-white flex items-center gap-2"
+              >
+                <Plus className="w-4 h-4" />
+                Add Campus Drive
+              </Button>
+            )}
+            {!["events", "opportunities", "campus-drives"].includes(activeTab) && <div />}
           </div>
         </header>
 
@@ -153,6 +177,8 @@ const AdminDashboard = () => {
           {activeTab === "overview" && <OverviewTab />}
           {activeTab === "events" && <EventsTab />}
           {activeTab === "bookings" && <BookingsTab />}
+          {activeTab === "opportunities" && <OpportunitiesTab />}
+          {activeTab === "campus-drives" && <CampusDrivesTab />}
           {activeTab === "analytics" && <AnalyticsTab />}
         </main>
       </div>
@@ -243,13 +269,8 @@ const EventsTab = () => {
                     <td className="py-3 px-4 text-foreground">{event.capacity}</td>
                     <td className="py-3 px-4 text-foreground">
                       <div className="flex items-center gap-2">
-                        <div className="w-32 h-2 bg-secondary rounded-full overflow-hidden">
-                          <div 
-                            className="h-full bg-gradient-accent rounded-full" 
-                            style={{ width: `${(event.registered / event.capacity) * 100}%` } as React.CSSProperties}
-                          />
-                        </div>
                         <span className="text-sm">{event.registered}/{event.capacity}</span>
+                        <Badge variant="outline">{Math.round((event.registered / event.capacity) * 100)}%</Badge>
                       </div>
                     </td>
                     <td className="py-3 px-4">
@@ -281,55 +302,135 @@ const EventsTab = () => {
 
 // Bookings Tab Component
 const BookingsTab = () => {
-  const bookings = [
-    { id: 1, userName: "Rahul Kumar", email: "rahul@example.com", event: "Tech Fest 2024", date: "2024-03-15", status: "Confirmed" },
-    { id: 2, userName: "Priya Singh", email: "priya@example.com", event: "AI/ML Hackathon", date: "2024-03-20", status: "Confirmed" },
-    { id: 3, userName: "Amit Patel", email: "amit@example.com", event: "Cultural Night", date: "2024-03-18", status: "Pending" },
-    { id: 4, userName: "Neha Sharma", email: "neha@example.com", event: "Tech Fest 2024", date: "2024-03-15", status: "Confirmed" },
-  ];
+  registrationService.initialize();
+  groupRegistrationService.initialize();
+  
+  const allRegistrations = registrationService.getAllRegistrations();
+  const allGroupRegistrations = groupRegistrationService.getAllGroupRegistrations();
+  
+  const totalRegistrations = allRegistrations.length + allGroupRegistrations.length;
 
   return (
-    <div className="p-6">
+    <div className="p-6 space-y-6">
+      {/* Individual Registrations */}
       <Card className="bg-white dark:bg-slate-900 border-border">
         <CardHeader>
-          <CardTitle className="text-foreground">Event Bookings</CardTitle>
-          <CardDescription>View and manage all user bookings</CardDescription>
+          <CardTitle className="text-foreground">Individual Registrations</CardTitle>
+          <CardDescription>Solo participants ({allRegistrations.length} total)</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-border">
-                  <th className="text-left py-3 px-4 font-semibold text-foreground">User Name</th>
-                  <th className="text-left py-3 px-4 font-semibold text-foreground">Email</th>
-                  <th className="text-left py-3 px-4 font-semibold text-foreground">Event</th>
-                  <th className="text-left py-3 px-4 font-semibold text-foreground">Booking Date</th>
-                  <th className="text-left py-3 px-4 font-semibold text-foreground">Status</th>
-                  <th className="text-left py-3 px-4 font-semibold text-foreground">Action</th>
-                </tr>
-              </thead>
-              <tbody>
-                {bookings.map((booking) => (
-                  <tr key={booking.id} className="border-b border-border hover:bg-secondary transition-all">
-                    <td className="py-3 px-4 text-foreground font-medium">{booking.userName}</td>
-                    <td className="py-3 px-4 text-foreground">{booking.email}</td>
-                    <td className="py-3 px-4 text-foreground">{booking.event}</td>
-                    <td className="py-3 px-4 text-foreground">{booking.date}</td>
-                    <td className="py-3 px-4">
-                      <Badge className={booking.status === "Confirmed" ? "bg-primary text-primary-foreground" : "bg-yellow-500 text-white"}>
-                        {booking.status}
-                      </Badge>
-                    </td>
-                    <td className="py-3 px-4">
-                      <Button variant="outline" size="sm">
-                        View Details
-                      </Button>
-                    </td>
+          {allRegistrations.length === 0 ? (
+            <div className="text-center py-8">
+              <Users className="w-10 h-10 mx-auto mb-3 opacity-50 text-muted-foreground" />
+              <p className="text-muted-foreground">No individual registrations yet</p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-border">
+                    <th className="text-left py-3 px-3 font-semibold text-foreground">Name</th>
+                    <th className="text-left py-3 px-3 font-semibold text-foreground">Email</th>
+                    <th className="text-left py-3 px-3 font-semibold text-foreground">Event</th>
+                    <th className="text-left py-3 px-3 font-semibold text-foreground">Date</th>
+                    <th className="text-left py-3 px-3 font-semibold text-foreground">Status</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody>
+                  {allRegistrations.map((registration) => (
+                    <tr key={registration.id} className="border-b border-border hover:bg-secondary transition-all">
+                      <td className="py-3 px-3 text-foreground font-medium">{registration.userName}</td>
+                      <td className="py-3 px-3 text-foreground">{registration.userEmail}</td>
+                      <td className="py-3 px-3 text-foreground">{registration.eventTitle}</td>
+                      <td className="py-3 px-3 text-foreground text-xs">
+                        {new Date(registration.registeredAt).toLocaleDateString()}
+                      </td>
+                      <td className="py-3 px-3">
+                        <Badge 
+                          className={
+                            registration.status === "Confirmed" 
+                              ? "bg-primary text-primary-foreground"
+                              : "bg-red-500 text-white"
+                          }
+                        >
+                          {registration.status}
+                        </Badge>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Team Registrations */}
+      <Card className="bg-white dark:bg-slate-900 border-border">
+        <CardHeader>
+          <CardTitle className="text-foreground">Team Registrations</CardTitle>
+          <CardDescription>Group hackathon teams ({allGroupRegistrations.length} teams, {allGroupRegistrations.reduce((sum, t) => sum + t.totalMembers, 0)} members)</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {allGroupRegistrations.length === 0 ? (
+            <div className="text-center py-8">
+              <Users className="w-10 h-10 mx-auto mb-3 opacity-50 text-muted-foreground" />
+              <p className="text-muted-foreground">No team registrations yet</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {allGroupRegistrations.map((team) => (
+                <div key={team.id} className="border border-border rounded-lg p-4 hover:bg-secondary transition-all">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-3">
+                    <div>
+                      <p className="text-xs text-muted-foreground">Team Name</p>
+                      <p className="font-semibold text-foreground">{team.teamName}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">Event</p>
+                      <p className="font-semibold text-foreground">{team.eventTitle}</p>
+                    </div>
+                    <div className="flex items-end">
+                      <Badge 
+                        className={
+                          team.status === "Confirmed" 
+                            ? "bg-primary text-primary-foreground"
+                            : "bg-red-500 text-white"
+                        }
+                      >
+                        {team.status}
+                      </Badge>
+                    </div>
+                  </div>
+
+                  <div className="border-t border-border pt-3">
+                    <p className="text-xs font-semibold text-muted-foreground mb-2">Team Leader</p>
+                    <div className="flex items-center gap-4 text-sm mb-3">
+                      <span className="text-foreground font-medium">{team.teamLeader.name}</span>
+                      <span className="text-muted-foreground">{team.teamLeader.email}</span>
+                      <span className="text-muted-foreground">{team.teamLeader.phone}</span>
+                    </div>
+
+                    <p className="text-xs font-semibold text-muted-foreground mb-2">Team Members ({team.totalMembers})</p>
+                    <div className="space-y-1">
+                      {team.teamMembers.map((member) => (
+                        <div key={member.id} className="flex items-center gap-4 text-sm bg-secondary rounded px-3 py-2">
+                          <Badge variant="outline" className="text-xs">{member.role}</Badge>
+                          <span className="text-foreground font-medium min-w-32">{member.name}</span>
+                          <span className="text-muted-foreground flex-1">{member.email}</span>
+                          <span className="text-muted-foreground">{member.phone}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="text-xs text-muted-foreground mt-3 pt-3 border-t border-border">
+                    Registered on {new Date(team.registeredAt).toLocaleDateString()} at {new Date(team.registeredAt).toLocaleTimeString()}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>
@@ -350,6 +451,174 @@ const AnalyticsTab = () => {
             <BarChart3 className="w-12 h-12 mx-auto mb-4 opacity-50" />
             <p>Analytics charts will be displayed here</p>
           </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+};
+
+// Opportunities Tab Component
+const OpportunitiesTab = () => {
+  const { opportunities, loadOpportunities, deleteOpportunity } = useOpportunities();
+
+  useEffect(() => {
+    loadOpportunities();
+  }, [loadOpportunities]);
+
+  return (
+    <div className="p-6 space-y-6">
+      <Card className="bg-white dark:bg-slate-900 border-border">
+        <CardHeader>
+          <CardTitle className="text-foreground">Manage Opportunities</CardTitle>
+          <CardDescription>Create and manage job opportunities, internships, and fellowships ({opportunities.length} total)</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {opportunities.length === 0 ? (
+            <div className="text-center py-8">
+              <Briefcase className="w-10 h-10 mx-auto mb-3 opacity-50 text-muted-foreground" />
+              <p className="text-muted-foreground">No opportunities created yet</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {opportunities.map((opp) => (
+                <div key={opp.id} className="border border-border rounded-lg p-4 hover:bg-secondary transition-all">
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-3">
+                    <div>
+                      <p className="text-xs text-muted-foreground">Title</p>
+                      <p className="font-semibold text-foreground">{opp.title}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">Company</p>
+                      <p className="font-semibold text-foreground">{opp.company}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">Type</p>
+                      <Badge className="bg-blue-100 text-blue-800">{opp.type}</Badge>
+                    </div>
+                    <div className="flex items-end">
+                      <Badge className={opp.status === 'Active' ? 'bg-green-100 text-green-800' : 'bg-slate-100 text-slate-800'}>
+                        {opp.status}
+                      </Badge>
+                    </div>
+                  </div>
+                  
+                  <div className="text-sm text-muted-foreground grid grid-cols-3 gap-2 mb-3">
+                    {opp.ctc && <span>CTC: {opp.ctc}</span>}
+                    {opp.positions && <span>Positions: {opp.positions}</span>}
+                    {opp.deadline && <span>Deadline: {new Date(opp.deadline).toLocaleDateString()}</span>}
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <button className="p-2 hover:bg-secondary rounded-lg transition-all" title="Edit">
+                      <Edit2 className="w-4 h-4 text-muted-foreground" />
+                    </button>
+                    <button 
+                      onClick={() => {
+                        if (window.confirm('Delete this opportunity?')) {
+                          deleteOpportunity(opp.id);
+                        }
+                      }}
+                      className="p-2 hover:bg-red-100 dark:hover:bg-red-900 rounded-lg transition-all" 
+                      title="Delete"
+                    >
+                      <Trash2 className="w-4 h-4 text-red-500" />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+};
+
+// Campus Drives Tab Component
+const CampusDrivesTab = () => {
+  const { campusDrives, loadCampusDrives, deleteCampusDrive } = useOpportunities();
+
+  useEffect(() => {
+    loadCampusDrives();
+  }, [loadCampusDrives]);
+
+  return (
+    <div className="p-6 space-y-6">
+      <Card className="bg-white dark:bg-slate-900 border-border">
+        <CardHeader>
+          <CardTitle className="text-foreground">Manage Campus Drives</CardTitle>
+          <CardDescription>Create and manage campus recruitment drives ({campusDrives.length} total)</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {campusDrives.length === 0 ? (
+            <div className="text-center py-8">
+              <Building2 className="w-10 h-10 mx-auto mb-3 opacity-50 text-muted-foreground" />
+              <p className="text-muted-foreground">No campus drives created yet</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {campusDrives.map((drive) => (
+                <div key={drive.id} className="border border-border rounded-lg p-4 hover:bg-secondary transition-all">
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-3">
+                    <div>
+                      <p className="text-xs text-muted-foreground">Company</p>
+                      <p className="font-semibold text-foreground">{drive.company}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">Drive Date</p>
+                      <p className="font-semibold text-foreground">{new Date(drive.driveDate).toLocaleDateString()}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">Positions</p>
+                      <p className="font-semibold text-foreground">{drive.positions}</p>
+                    </div>
+                    <div className="flex items-end">
+                      <Badge className={
+                        drive.status === 'Upcoming' ? 'bg-yellow-100 text-yellow-800' :
+                        drive.status === 'Ongoing' ? 'bg-green-100 text-green-800' :
+                        'bg-slate-100 text-slate-800'
+                      }>
+                        {drive.status}
+                      </Badge>
+                    </div>
+                  </div>
+                  
+                  <div className="text-sm text-muted-foreground grid grid-cols-2 gap-2 mb-3">
+                    {drive.ctc && <span>CTC: {drive.ctc}</span>}
+                    {drive.venue && <span>Venue: {drive.venue}</span>}
+                  </div>
+
+                  {drive.roles && drive.roles.length > 0 && (
+                    <div className="text-sm mb-3">
+                      <p className="text-xs text-muted-foreground mb-1">Roles:</p>
+                      <div className="flex flex-wrap gap-1">
+                        {drive.roles.map((role, idx) => (
+                          <Badge key={idx} variant="outline" className="text-xs">{role}</Badge>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="flex items-center gap-2">
+                    <button className="p-2 hover:bg-secondary rounded-lg transition-all" title="Edit">
+                      <Edit2 className="w-4 h-4 text-muted-foreground" />
+                    </button>
+                    <button 
+                      onClick={() => {
+                        if (window.confirm('Delete this campus drive?')) {
+                          deleteCampusDrive(drive.id);
+                        }
+                      }}
+                      className="p-2 hover:bg-red-100 dark:hover:bg-red-900 rounded-lg transition-all" 
+                      title="Delete"
+                    >
+                      <Trash2 className="w-4 h-4 text-red-500" />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>

@@ -5,42 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Trophy, Calendar, Users, Code2, Rocket, Target, Zap } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
-
-const hackathons = [
-  {
-    title: "AI/ML Innovation Challenge",
-    date: "March 20-21, 2024",
-    duration: "24 hours",
-    prize: "₹50,000",
-    participants: 120,
-    difficulty: "Advanced",
-    tags: ["AI", "Machine Learning", "Deep Learning"],
-    status: "Open",
-    description: "Build intelligent solutions using cutting-edge AI and ML technologies"
-  },
-  {
-    title: "Web3 Hackathon",
-    date: "April 5-6, 2024",
-    duration: "36 hours",
-    prize: "₹75,000",
-    participants: 85,
-    difficulty: "Intermediate",
-    tags: ["Blockchain", "Smart Contracts", "DeFi"],
-    status: "Open",
-    description: "Create decentralized applications and explore blockchain possibilities"
-  },
-  {
-    title: "Mobile App Challenge",
-    date: "April 15-16, 2024",
-    duration: "48 hours",
-    prize: "₹60,000",
-    participants: 65,
-    difficulty: "All Levels",
-    tags: ["React Native", "Flutter", "Mobile Dev"],
-    status: "Open",
-    description: "Develop innovative mobile applications for iOS and Android"
-  },
-];
+import { useEvents } from "@/hooks/useEvents";
 
 const timeline = [
   { phase: "Registration", duration: "2 weeks before", color: "bg-primary" },
@@ -51,6 +16,7 @@ const timeline = [
 
 const Hackathons = () => {
   const navigate = useNavigate();
+  const { events: hackathons, loading } = useEvents("Hackathon");
   
   return (
     <div className="min-h-screen flex flex-col">
@@ -125,9 +91,13 @@ const Hackathons = () => {
             
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
               {hackathons.map((hack, index) => (
-                <div key={index} className="group">
+                <button
+                  key={index}
+                  onClick={() => navigate(`/hackathons/${hack.id}`)}
+                  className="group text-left hover:no-underline"
+                >
                   <div className="absolute -inset-0.5 bg-gradient-to-r from-primary/20 to-accent/20 rounded-2xl blur opacity-0 group-hover:opacity-100 transition"></div>
-                  <Card className="relative bg-white dark:bg-slate-900 border-border hover:shadow-xl transition-all group-hover:scale-105 h-full flex flex-col">
+                  <Card className="relative bg-white dark:bg-slate-900 border-border hover:shadow-xl transition-all group-hover:scale-105 h-full flex flex-col cursor-pointer">
                     <CardHeader>
                       <div className="flex items-center justify-between mb-4">
                         <Badge className="bg-accent/20 text-accent hover:bg-accent/30">{hack.status}</Badge>
@@ -182,7 +152,7 @@ const Hackathons = () => {
                     </CardContent>
 
                   </Card>
-                </div>
+                </button>
               ))}
             </div>
           </div>
