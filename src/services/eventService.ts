@@ -24,6 +24,11 @@ export interface Event {
   contactEmail?: string;
   contactPhone?: string;
   createdAt?: Date;
+  // Payment fields
+  isPaid?: boolean;
+  price?: number; // Price in rupees
+  paymentDeadline?: string;
+  paymentMethods?: string[]; // ['card', 'upi', 'netbanking']
   // Hackathon specific
   problemStatements?: string;
   judgesCriteria?: string;
@@ -80,7 +85,12 @@ const DEFAULT_EVENTS: Event[] = [
     tags: ["React Native", "Flutter", "Mobile Dev"],
     status: "Open",
     description: "Develop innovative mobile applications for iOS and Android",
-    category: "Hackathon"
+    category: "Hackathon",
+    // Payment fields for this event
+    isPaid: true,
+    price: 299,
+    paymentDeadline: "2024-04-14",
+    paymentMethods: ["card", "upi", "netbanking"]
   }
 ];
 
@@ -90,6 +100,28 @@ export const eventService = {
     const stored = localStorage.getItem(EVENTS_KEY);
     if (!stored) {
       localStorage.setItem(EVENTS_KEY, JSON.stringify(DEFAULT_EVENTS));
+    } else {
+      // Migrate existing events to add missing payment fields
+      try {
+        const events = JSON.parse(stored);
+        let hasUpdates = false;
+        
+        const updatedEvents = events.map((event: Event) => {
+          // Check if this is one of the default events that should have payment fields
+          const defaultEvent = DEFAULT_EVENTS.find(de => de.id === event.id);
+          if (defaultEvent && defaultEvent.isPaid && !event.isPaid) {
+            hasUpdates = true;
+            return { ...event, ...defaultEvent };
+          }
+          return event;
+        });
+        
+        if (hasUpdates) {
+          localStorage.setItem(EVENTS_KEY, JSON.stringify(updatedEvents));
+        }
+      } catch (e) {
+        console.error('Error migrating events:', e);
+      }
     }
   },
 

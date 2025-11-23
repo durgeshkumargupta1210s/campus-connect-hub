@@ -33,6 +33,11 @@ const AddEventPage = () => {
     organizer: "",
     contactEmail: "",
     contactPhone: "",
+    // Payment fields
+    isPaid: false,
+    price: "",
+    paymentDeadline: "",
+    paymentMethods: ["card", "upi", "netbanking"],
     // Hackathon specific
     problemStatements: "",
     judgesCriteria: "",
@@ -112,6 +117,11 @@ const AddEventPage = () => {
       organizer: formData.organizer,
       contactEmail: formData.contactEmail,
       contactPhone: formData.contactPhone,
+      // Payment fields
+      isPaid: formData.isPaid,
+      price: formData.isPaid ? parseInt(formData.price) || 0 : 0,
+      paymentDeadline: formData.paymentDeadline,
+      paymentMethods: formData.paymentMethods,
       status: "Open",
       participants: 0,
       // Category-specific fields
@@ -398,6 +408,141 @@ const AddEventPage = () => {
                     ))}
                   </div>
                 </div>
+              </CardContent>
+            </Card>
+
+            {/* Payment Configuration */}
+            <Card className="bg-white dark:bg-slate-900 border-border">
+              <CardHeader>
+                <CardTitle className="text-foreground">Payment Configuration</CardTitle>
+                <CardDescription>Set up pricing and payment options for this event</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="flex items-center gap-4 p-4 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700">
+                  <input
+                    type="checkbox"
+                    id="isPaid"
+                    checked={formData.isPaid}
+                    onChange={(e) => setFormData(prev => ({ ...prev, isPaid: e.target.checked }))}
+                    className="w-5 h-5 cursor-pointer"
+                  />
+                  <label htmlFor="isPaid" className="cursor-pointer flex-1">
+                    <p className="font-semibold text-foreground">This is a Paid Event</p>
+                    <p className="text-sm text-muted-foreground">Enable payment collection for this event</p>
+                  </label>
+                </div>
+
+                {formData.isPaid && (
+                  <>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <Label className="text-foreground font-semibold mb-2 block">Price (₹) *</Label>
+                        <Input
+                          name="price"
+                          type="number"
+                          value={formData.price}
+                          onChange={handleInputChange}
+                          placeholder="e.g., 500"
+                          className="bg-background border-border"
+                          required={formData.isPaid}
+                        />
+                      </div>
+                      <div>
+                        <Label className="text-foreground font-semibold mb-2 block">Payment Deadline</Label>
+                        <Input
+                          name="paymentDeadline"
+                          type="date"
+                          value={formData.paymentDeadline}
+                          onChange={handleInputChange}
+                          className="bg-background border-border"
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <Label className="text-foreground font-semibold mb-3 block">Accepted Payment Methods</Label>
+                      <div className="space-y-3 p-4 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700">
+                        <div className="flex items-center gap-3">
+                          <input
+                            type="checkbox"
+                            id="card"
+                            checked={formData.paymentMethods?.includes("card")}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setFormData(prev => ({
+                                  ...prev,
+                                  paymentMethods: [...(prev.paymentMethods || []), "card"]
+                                }));
+                              } else {
+                                setFormData(prev => ({
+                                  ...prev,
+                                  paymentMethods: (prev.paymentMethods || []).filter(m => m !== "card")
+                                }));
+                              }
+                            }}
+                            className="w-4 h-4 cursor-pointer"
+                          />
+                          <label htmlFor="card" className="cursor-pointer flex-1">
+                            <p className="font-medium text-foreground">Credit/Debit Card</p>
+                            <p className="text-xs text-muted-foreground">Visa, Mastercard, etc.</p>
+                          </label>
+                        </div>
+
+                        <div className="flex items-center gap-3">
+                          <input
+                            type="checkbox"
+                            id="upi"
+                            checked={formData.paymentMethods?.includes("upi")}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setFormData(prev => ({
+                                  ...prev,
+                                  paymentMethods: [...(prev.paymentMethods || []), "upi"]
+                                }));
+                              } else {
+                                setFormData(prev => ({
+                                  ...prev,
+                                  paymentMethods: (prev.paymentMethods || []).filter(m => m !== "upi")
+                                }));
+                              }
+                            }}
+                            className="w-4 h-4 cursor-pointer"
+                          />
+                          <label htmlFor="upi" className="cursor-pointer flex-1">
+                            <p className="font-medium text-foreground">UPI</p>
+                            <p className="text-xs text-muted-foreground">Google Pay, PhonePe, etc.</p>
+                          </label>
+                        </div>
+
+                        <div className="flex items-center gap-3">
+                          <input
+                            type="checkbox"
+                            id="netbanking"
+                            checked={formData.paymentMethods?.includes("netbanking")}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setFormData(prev => ({
+                                  ...prev,
+                                  paymentMethods: [...(prev.paymentMethods || []), "netbanking"]
+                                }));
+                              } else {
+                                setFormData(prev => ({
+                                  ...prev,
+                                  paymentMethods: (prev.paymentMethods || []).filter(m => m !== "netbanking")
+                                }));
+                              }
+                            }}
+                            className="w-4 h-4 cursor-pointer"
+                          />
+                          <label htmlFor="netbanking" className="cursor-pointer flex-1">
+                            <p className="font-medium text-foreground">Net Banking</p>
+                            <p className="text-xs text-muted-foreground">Direct bank transfer</p>
+                          </label>
+                        </div>
+                      </div>
+                    </div>
+                  </>
+                )}
               </CardContent>
             </Card>
 

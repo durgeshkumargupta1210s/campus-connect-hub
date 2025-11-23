@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Calendar, MapPin, Users, Trophy, Clock, Mail, Phone, CheckCircle, AlertCircle, Plus, Trash2 } from 'lucide-react';
+import { ArrowLeft, Calendar, MapPin, Users, Trophy, Clock, Mail, Phone, CheckCircle, AlertCircle, Plus, Trash2, CreditCard } from 'lucide-react';
 import { eventService } from '@/services/eventService';
 import { useRegistrations } from '@/hooks/useRegistrations';
 import { useGroupRegistrations } from '@/hooks/useGroupRegistrations';
@@ -262,7 +262,15 @@ const EventDetails = () => {
                   </Card>
                 )}
 
-                {event.prize && (
+                {event.isPaid ? (
+                  <Card className="bg-white dark:bg-slate-900 border-border border-accent/50">
+                    <CardContent className="pt-6">
+                      <CreditCard className="w-6 h-6 text-accent mb-2" />
+                      <p className="text-xs text-muted-foreground">Fee</p>
+                      <p className="font-semibold text-foreground text-accent">₹{event.price}</p>
+                    </CardContent>
+                  </Card>
+                ) : event.prize ? (
                   <Card className="bg-white dark:bg-slate-900 border-border">
                     <CardContent className="pt-6">
                       <Trophy className="w-6 h-6 text-primary mb-2" />
@@ -270,7 +278,7 @@ const EventDetails = () => {
                       <p className="font-semibold text-foreground">{event.prize}</p>
                     </CardContent>
                   </Card>
-                )}
+                ) : null}
 
                 <Card className="bg-white dark:bg-slate-900 border-border">
                   <CardContent className="pt-6">
@@ -288,6 +296,16 @@ const EventDetails = () => {
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <p className="text-foreground/90">{event.description}</p>
+                  
+                  {event.isPaid && event.paymentDeadline && (
+                    <div className="flex gap-3 p-3 bg-accent/10 rounded-lg border border-accent/20">
+                      <CreditCard className="w-5 h-5 text-accent flex-shrink-0 mt-0.5" />
+                      <div>
+                        <p className="text-sm text-muted-foreground">Payment Deadline</p>
+                        <p className="font-semibold text-foreground">{new Date(event.paymentDeadline).toLocaleDateString('en-IN', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' })}</p>
+                      </div>
+                    </div>
+                  )}
                   
                   {event.location && (
                     <div className="flex gap-3">
@@ -479,242 +497,263 @@ const EventDetails = () => {
                 <CardHeader>
                   <CardTitle className="text-foreground">Register Now</CardTitle>
                   <CardDescription>Join {event.participants || 0}+ participants</CardDescription>
+                  {event.isPaid && (
+                    <div className="mt-3 p-3 bg-accent/10 rounded-lg border border-accent/20 flex items-center gap-2">
+                      <CreditCard className="w-4 h-4 text-accent" />
+                      <span className="text-sm font-semibold text-accent">Paid Event • ₹{event.price}</span>
+                    </div>
+                  )}
                 </CardHeader>
                 <CardContent>
-                  {isGroupEvent && (
-                    <Tabs value={registrationType} onValueChange={(value) => setRegistrationType(value as 'individual' | 'group')} className="mb-4">
-                      <TabsList className="grid w-full grid-cols-2">
-                        <TabsTrigger value="individual">Individual</TabsTrigger>
-                        <TabsTrigger value="group">Team</TabsTrigger>
-                      </TabsList>
-                    </Tabs>
-                  )}
-
-                  {registrationType === 'individual' ? (
-                    // Individual Registration Form
-                    <form onSubmit={handleIndividualSubmit} className="space-y-4">
-                      <div>
-                        <Label className="text-foreground font-semibold mb-2 block">Full Name *</Label>
-                        <Input
-                          name="fullName"
-                          value={formData.fullName}
-                          onChange={handleInputChange}
-                          placeholder="Your name"
-                          className="bg-background border-border"
-                          required
-                          disabled={isSubmitting}
-                        />
-                      </div>
-
-                      <div>
-                        <Label className="text-foreground font-semibold mb-2 block">Email *</Label>
-                        <Input
-                          name="email"
-                          type="email"
-                          value={formData.email}
-                          onChange={handleInputChange}
-                          placeholder="your@email.com"
-                          className="bg-background border-border"
-                          required
-                          disabled={isSubmitting}
-                        />
-                      </div>
-
-                      <div>
-                        <Label className="text-foreground font-semibold mb-2 block">Phone Number *</Label>
-                        <Input
-                          name="phone"
-                          value={formData.phone}
-                          onChange={handleInputChange}
-                          placeholder="+91 XXXXX XXXXX"
-                          className="bg-background border-border"
-                          required
-                          disabled={isSubmitting}
-                        />
-                      </div>
-
-                      {message && (
-                        <div className={`flex items-center gap-2 p-3 rounded-lg ${
-                          message.type === 'success'
-                            ? 'bg-green-500/20 text-green-300 border border-green-500/30'
-                            : 'bg-red-500/20 text-red-300 border border-red-500/30'
-                        }`}>
-                          {message.type === 'success' ? (
-                            <CheckCircle className="w-5 h-5 flex-shrink-0" />
-                          ) : (
-                            <AlertCircle className="w-5 h-5 flex-shrink-0" />
-                          )}
-                          <span className="text-sm">{message.text}</span>
-                        </div>
-                      )}
-
-                      {userAlreadyRegistered && (
-                        <div className="flex items-center gap-2 p-3 rounded-lg bg-blue-500/20 text-blue-300 border border-blue-500/30">
-                          <CheckCircle className="w-5 h-5 flex-shrink-0" />
-                          <span className="text-sm">You are already registered!</span>
-                        </div>
-                      )}
-
-                      <Button
-                        type="submit"
-                        disabled={isSubmitting || userAlreadyRegistered}
-                        className="w-full bg-gradient-accent hover:opacity-90 text-white"
-                      >
-                        {isSubmitting ? 'Registering...' : userAlreadyRegistered ? 'Already Registered' : 'Register Now'}
-                      </Button>
-
-                      <p className="text-xs text-muted-foreground text-center">
-                        You will receive a confirmation email after registration.
-                      </p>
-                    </form>
+                  {event.isPaid ? (
+                    // Paid Event - Show Payment Button
+                    <Button
+                      onClick={() => navigate(`/event/${eventId}/checkout`)}
+                      disabled={userAlreadyRegistered}
+                      className="w-full bg-gradient-accent hover:opacity-90 text-white mb-2"
+                      size="lg"
+                    >
+                      <CreditCard className="w-4 h-4 mr-2" />
+                      {userAlreadyRegistered ? 'Already Registered' : 'Proceed to Payment'}
+                    </Button>
                   ) : (
-                    // Group Registration Form
-                    <form onSubmit={handleGroupSubmit} className="space-y-4 max-h-96 overflow-y-auto">
-                      <div className="space-y-2 border-b border-border pb-4">
-                        <h3 className="font-semibold text-foreground">Team Information</h3>
-                        <div>
-                          <Label className="text-foreground text-sm mb-1 block">Team Name *</Label>
-                          <Input
-                            name="teamName"
-                            value={groupFormData.teamName}
-                            onChange={handleGroupInputChange}
-                            placeholder="e.g., Tech Titans"
-                            className="bg-background border-border text-sm"
-                            required
-                            disabled={isSubmitting}
-                          />
-                        </div>
-                      </div>
+                    <>
+                      {isGroupEvent && (
+                        <Tabs value={registrationType} onValueChange={(value) => setRegistrationType(value as 'individual' | 'group')} className="mb-4">
+                          <TabsList className="grid w-full grid-cols-2">
+                            <TabsTrigger value="individual">Individual</TabsTrigger>
+                            <TabsTrigger value="group">Team</TabsTrigger>
+                          </TabsList>
+                        </Tabs>
+                      )}
 
-                      <div className="space-y-2 border-b border-border pb-4">
-                        <h3 className="font-semibold text-foreground">Team Leader</h3>
-                        <div>
-                          <Label className="text-foreground text-sm mb-1 block">Name *</Label>
-                          <Input
-                            name="teamLeaderName"
-                            value={groupFormData.teamLeaderName}
-                            onChange={handleGroupInputChange}
-                            placeholder="Leader name"
-                            className="bg-background border-border text-sm"
-                            required
-                            disabled={isSubmitting}
-                          />
-                        </div>
-                        <div>
-                          <Label className="text-foreground text-sm mb-1 block">Email *</Label>
-                          <Input
-                            name="teamLeaderEmail"
-                            type="email"
-                            value={groupFormData.teamLeaderEmail}
-                            onChange={handleGroupInputChange}
-                            placeholder="leader@email.com"
-                            className="bg-background border-border text-sm"
-                            required
-                            disabled={isSubmitting}
-                          />
-                        </div>
-                        <div>
-                          <Label className="text-foreground text-sm mb-1 block">Phone *</Label>
-                          <Input
-                            name="teamLeaderPhone"
-                            value={groupFormData.teamLeaderPhone}
-                            onChange={handleGroupInputChange}
-                            placeholder="+91 XXXXX XXXXX"
-                            className="bg-background border-border text-sm"
-                            required
-                            disabled={isSubmitting}
-                          />
-                        </div>
-                      </div>
-
-                      <div className="space-y-2">
-                        <div className="flex items-center justify-between">
-                          <h3 className="font-semibold text-foreground">Team Members</h3>
-                          <Button
-                            type="button"
-                            onClick={addTeamMember}
-                            size="sm"
-                            variant="outline"
-                            className="h-7 gap-1"
-                          >
-                            <Plus className="w-3 h-3" />
-                            Add Member
-                          </Button>
-                        </div>
-
-                        {groupFormData.teamMembers.map((member, index) => (
-                          <div key={index} className="p-3 bg-secondary rounded-lg space-y-2">
-                            <div className="flex items-center justify-between mb-2">
-                              <span className="text-xs font-semibold text-muted-foreground">Member {index + 1}</span>
-                              {groupFormData.teamMembers.length > 1 && (
-                                <button
-                                  type="button"
-                                  onClick={() => removeTeamMember(index)}
-                                  className="p-1 hover:bg-red-500/20 rounded transition-colors"
-                                  title="Remove member"
-                                  aria-label="Remove team member"
-                                >
-                                  <Trash2 className="w-3 h-3 text-red-500" />
-                                </button>
-                              )}
-                            </div>
+                      {registrationType === 'individual' ? (
+                        // Individual Registration Form
+                        <form onSubmit={handleIndividualSubmit} className="space-y-4">
+                          <div>
+                            <Label className="text-foreground font-semibold mb-2 block">Full Name *</Label>
                             <Input
-                              value={member.name}
-                              onChange={(e) => handleTeamMemberChange(index, 'name', e.target.value)}
-                              placeholder="Name"
-                              className="bg-background border-border text-sm"
-                            />
-                            <Input
-                              type="email"
-                              value={member.email}
-                              onChange={(e) => handleTeamMemberChange(index, 'email', e.target.value)}
-                              placeholder="Email"
-                              className="bg-background border-border text-sm"
-                            />
-                            <Input
-                              value={member.phone}
-                              onChange={(e) => handleTeamMemberChange(index, 'phone', e.target.value)}
-                              placeholder="Phone"
-                              className="bg-background border-border text-sm"
+                              name="fullName"
+                              value={formData.fullName}
+                              onChange={handleInputChange}
+                              placeholder="Your name"
+                              className="bg-background border-border"
+                              required
+                              disabled={isSubmitting}
                             />
                           </div>
-                        ))}
-                      </div>
 
-                      {message && (
-                        <div className={`flex items-center gap-2 p-3 rounded-lg ${
-                          message.type === 'success'
-                            ? 'bg-green-500/20 text-green-300 border border-green-500/30'
-                            : 'bg-red-500/20 text-red-300 border border-red-500/30'
-                        }`}>
-                          {message.type === 'success' ? (
-                            <CheckCircle className="w-5 h-5 flex-shrink-0" />
-                          ) : (
-                            <AlertCircle className="w-5 h-5 flex-shrink-0" />
+                          <div>
+                            <Label className="text-foreground font-semibold mb-2 block">Email *</Label>
+                            <Input
+                              name="email"
+                              type="email"
+                              value={formData.email}
+                              onChange={handleInputChange}
+                              placeholder="your@email.com"
+                              className="bg-background border-border"
+                              required
+                              disabled={isSubmitting}
+                            />
+                          </div>
+
+                          <div>
+                            <Label className="text-foreground font-semibold mb-2 block">Phone Number *</Label>
+                            <Input
+                              name="phone"
+                              value={formData.phone}
+                              onChange={handleInputChange}
+                              placeholder="+91 XXXXX XXXXX"
+                              className="bg-background border-border"
+                              required
+                              disabled={isSubmitting}
+                            />
+                          </div>
+
+                          {message && (
+                            <div className={`flex items-center gap-2 p-3 rounded-lg ${
+                              message.type === 'success'
+                                ? 'bg-green-500/20 text-green-300 border border-green-500/30'
+                                : 'bg-red-500/20 text-red-300 border border-red-500/30'
+                            }`}>
+                              {message.type === 'success' ? (
+                                <CheckCircle className="w-5 h-5 flex-shrink-0" />
+                              ) : (
+                                <AlertCircle className="w-5 h-5 flex-shrink-0" />
+                              )}
+                              <span className="text-sm">{message.text}</span>
+                            </div>
                           )}
-                          <span className="text-xs">{message.text}</span>
-                        </div>
+
+                          {userAlreadyRegistered && (
+                            <div className="flex items-center gap-2 p-3 rounded-lg bg-blue-500/20 text-blue-300 border border-blue-500/30">
+                              <CheckCircle className="w-5 h-5 flex-shrink-0" />
+                              <span className="text-sm">You are already registered!</span>
+                            </div>
+                          )}
+
+                          <Button
+                            type="submit"
+                            disabled={isSubmitting || userAlreadyRegistered}
+                            className="w-full bg-gradient-accent hover:opacity-90 text-white"
+                          >
+                            {isSubmitting ? 'Registering...' : userAlreadyRegistered ? 'Already Registered' : 'Register Now'}
+                          </Button>
+
+                          <p className="text-xs text-muted-foreground text-center">
+                            You will receive a confirmation email after registration.
+                          </p>
+                        </form>
+                      ) : (
+                        // Group Registration Form
+                        <form onSubmit={handleGroupSubmit} className="space-y-4 max-h-96 overflow-y-auto">
+                          <div className="space-y-2 border-b border-border pb-4">
+                            <h3 className="font-semibold text-foreground">Team Information</h3>
+                            <div>
+                              <Label className="text-foreground text-sm mb-1 block">Team Name *</Label>
+                              <Input
+                                name="teamName"
+                                value={groupFormData.teamName}
+                                onChange={handleGroupInputChange}
+                                placeholder="e.g., Tech Titans"
+                                className="bg-background border-border text-sm"
+                                required
+                                disabled={isSubmitting}
+                              />
+                            </div>
+                          </div>
+
+                          <div className="space-y-2 border-b border-border pb-4">
+                            <h3 className="font-semibold text-foreground">Team Leader</h3>
+                            <div>
+                              <Label className="text-foreground text-sm mb-1 block">Name *</Label>
+                              <Input
+                                name="teamLeaderName"
+                                value={groupFormData.teamLeaderName}
+                                onChange={handleGroupInputChange}
+                                placeholder="Leader name"
+                                className="bg-background border-border text-sm"
+                                required
+                                disabled={isSubmitting}
+                              />
+                            </div>
+                            <div>
+                              <Label className="text-foreground text-sm mb-1 block">Email *</Label>
+                              <Input
+                                name="teamLeaderEmail"
+                                type="email"
+                                value={groupFormData.teamLeaderEmail}
+                                onChange={handleGroupInputChange}
+                                placeholder="leader@email.com"
+                                className="bg-background border-border text-sm"
+                                required
+                                disabled={isSubmitting}
+                              />
+                            </div>
+                            <div>
+                              <Label className="text-foreground text-sm mb-1 block">Phone *</Label>
+                              <Input
+                                name="teamLeaderPhone"
+                                value={groupFormData.teamLeaderPhone}
+                                onChange={handleGroupInputChange}
+                                placeholder="+91 XXXXX XXXXX"
+                                className="bg-background border-border text-sm"
+                                required
+                                disabled={isSubmitting}
+                              />
+                            </div>
+                          </div>
+
+                          <div className="space-y-2">
+                            <div className="flex items-center justify-between">
+                              <h3 className="font-semibold text-foreground">Team Members</h3>
+                              <Button
+                                type="button"
+                                onClick={addTeamMember}
+                                size="sm"
+                                variant="outline"
+                                className="h-7 gap-1"
+                              >
+                                <Plus className="w-3 h-3" />
+                                Add Member
+                              </Button>
+                            </div>
+
+                            {groupFormData.teamMembers.map((member, index) => (
+                              <div key={index} className="p-3 bg-secondary rounded-lg space-y-2">
+                                <div className="flex items-center justify-between mb-2">
+                                  <span className="text-xs font-semibold text-muted-foreground">Member {index + 1}</span>
+                                  {groupFormData.teamMembers.length > 1 && (
+                                    <button
+                                      type="button"
+                                      onClick={() => removeTeamMember(index)}
+                                      className="p-1 hover:bg-red-500/20 rounded transition-colors"
+                                      title="Remove member"
+                                      aria-label="Remove team member"
+                                    >
+                                      <Trash2 className="w-3 h-3 text-red-500" />
+                                    </button>
+                                  )}
+                                </div>
+                                <Input
+                                  value={member.name}
+                                  onChange={(e) => handleTeamMemberChange(index, 'name', e.target.value)}
+                                  placeholder="Name"
+                                  className="bg-background border-border text-sm"
+                                />
+                                <Input
+                                  type="email"
+                                  value={member.email}
+                                  onChange={(e) => handleTeamMemberChange(index, 'email', e.target.value)}
+                                  placeholder="Email"
+                                  className="bg-background border-border text-sm"
+                                />
+                                <Input
+                                  value={member.phone}
+                                  onChange={(e) => handleTeamMemberChange(index, 'phone', e.target.value)}
+                                  placeholder="Phone"
+                                  className="bg-background border-border text-sm"
+                                />
+                              </div>
+                            ))}
+                          </div>
+
+                          {message && (
+                            <div className={`flex items-center gap-2 p-3 rounded-lg ${
+                              message.type === 'success'
+                                ? 'bg-green-500/20 text-green-300 border border-green-500/30'
+                                : 'bg-red-500/20 text-red-300 border border-red-500/30'
+                            }`}>
+                              {message.type === 'success' ? (
+                                <CheckCircle className="w-5 h-5 flex-shrink-0" />
+                              ) : (
+                                <AlertCircle className="w-5 h-5 flex-shrink-0" />
+                              )}
+                              <span className="text-xs">{message.text}</span>
+                            </div>
+                          )}
+
+                          {teamAlreadyRegistered && (
+                            <div className="flex items-center gap-2 p-3 rounded-lg bg-blue-500/20 text-blue-300 border border-blue-500/30">
+                              <CheckCircle className="w-5 h-5 flex-shrink-0" />
+                              <span className="text-xs">Your team is already registered!</span>
+                            </div>
+                          )}
+
+                          <Button
+                            type="submit"
+                            disabled={isSubmitting || teamAlreadyRegistered}
+                            className="w-full bg-gradient-accent hover:opacity-90 text-white"
+                          >
+                            {isSubmitting ? 'Registering Team...' : teamAlreadyRegistered ? 'Already Registered' : 'Register Team'}
+                          </Button>
+
+                          <p className="text-xs text-muted-foreground text-center">
+                            Team leader will receive confirmation email.
+                          </p>
+                        </form>
                       )}
-
-                      {teamAlreadyRegistered && (
-                        <div className="flex items-center gap-2 p-3 rounded-lg bg-blue-500/20 text-blue-300 border border-blue-500/30">
-                          <CheckCircle className="w-5 h-5 flex-shrink-0" />
-                          <span className="text-xs">Your team is already registered!</span>
-                        </div>
-                      )}
-
-                      <Button
-                        type="submit"
-                        disabled={isSubmitting || teamAlreadyRegistered}
-                        className="w-full bg-gradient-accent hover:opacity-90 text-white"
-                      >
-                        {isSubmitting ? 'Registering Team...' : teamAlreadyRegistered ? 'Already Registered' : 'Register Team'}
-                      </Button>
-
-                      <p className="text-xs text-muted-foreground text-center">
-                        Team leader will receive confirmation email.
-                      </p>
-                    </form>
+                    </>
                   )}
                 </CardContent>
               </Card>

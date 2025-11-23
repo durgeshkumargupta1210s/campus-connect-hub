@@ -383,14 +383,11 @@ const Placements = () => {
               Ready to Start Your Career?
             </h2>
             <p className="text-xl text-white/90 mb-8 max-w-2xl mx-auto">
-              Create your profile, upload your resume, and apply for your dream job today
+              Upload your resume and apply for your dream job today
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button size="lg" className="bg-accent hover:bg-accent/90 text-accent-foreground shadow-lg hover:shadow-glow">
-                Create Profile
-              </Button>
               <Link to="/resources">
-                <Button size="lg" variant="outline" className="bg-white/10 border-white/20 text-white hover:bg-white/20 backdrop-blur-sm">
+                <Button size="lg" className="bg-accent hover:bg-accent/90 text-accent-foreground shadow-lg hover:shadow-glow">
                   Prepare Now
                 </Button>
               </Link>

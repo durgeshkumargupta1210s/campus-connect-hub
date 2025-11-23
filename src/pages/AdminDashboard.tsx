@@ -17,12 +17,15 @@ import {
   Trash2,
   Eye,
   Briefcase,
-  Building2
+  Users2
 } from "lucide-react";
 import { registrationService } from "@/services/registrationService";
 import { eventService } from "@/services/eventService";
 import { groupRegistrationService } from "@/services/groupRegistrationService";
 import { useOpportunities } from "@/hooks/useOpportunities";
+import { useClubs } from "@/hooks/useClubs";
+import { useClubApplications } from "@/hooks/useClubApplications";
+import { usePayments } from "@/hooks/usePayments";
 const eventStats = [
   { label: "Total Events", value: "24", icon: Calendar, color: "text-primary" },
   { label: "Total Bookings", value: "1,250", icon: Users, color: "text-accent" },
@@ -70,7 +73,9 @@ const AdminDashboard = () => {
     { id: "events", label: "Events", icon: Calendar },
     { id: "bookings", label: "Bookings", icon: Users },
     { id: "opportunities", label: "Opportunities", icon: Briefcase },
-    { id: "campus-drives", label: "Campus Drives", icon: Building2 },
+    { id: "clubs", label: "Clubs", icon: Users2 },
+    { id: "club-applications", label: "Club Applications", icon: Users },
+    { id: "payments", label: "Payments", icon: Briefcase },
     { id: "analytics", label: "Analytics", icon: BarChart3 },
   ];
 
@@ -159,16 +164,16 @@ const AdminDashboard = () => {
                 Add Opportunity
               </Button>
             )}
-            {activeTab === "campus-drives" && (
+            {activeTab === "clubs" && (
               <Button 
-                onClick={() => navigate("/admin/add-campus-drive")}
+                onClick={() => navigate("/admin/add-club")}
                 className="bg-gradient-accent hover:opacity-90 text-white flex items-center gap-2"
               >
                 <Plus className="w-4 h-4" />
-                Add Campus Drive
+                Add Club
               </Button>
             )}
-            {!["events", "opportunities", "campus-drives"].includes(activeTab) && <div />}
+            {!["events", "opportunities", "clubs"].includes(activeTab) && <div />}
           </div>
         </header>
 
@@ -178,7 +183,9 @@ const AdminDashboard = () => {
           {activeTab === "events" && <EventsTab />}
           {activeTab === "bookings" && <BookingsTab />}
           {activeTab === "opportunities" && <OpportunitiesTab />}
-          {activeTab === "campus-drives" && <CampusDrivesTab />}
+          {activeTab === "clubs" && <ClubsTab />}
+          {activeTab === "club-applications" && <ClubApplicationsTab />}
+          {activeTab === "payments" && <PaymentsTab />}
           {activeTab === "analytics" && <AnalyticsTab />}
         </main>
       </div>
@@ -535,81 +542,432 @@ const OpportunitiesTab = () => {
 };
 
 // Campus Drives Tab Component
-const CampusDrivesTab = () => {
-  const { campusDrives, loadCampusDrives, deleteCampusDrive } = useOpportunities();
+
+// Clubs Tab Component
+const ClubsTab = () => {
+  const navigate = useNavigate();
+  const { clubs, loadClubs, deleteClub } = useClubs();
 
   useEffect(() => {
-    loadCampusDrives();
-  }, [loadCampusDrives]);
+    loadClubs();
+  }, [loadClubs]);
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-6">
       <Card className="bg-white dark:bg-slate-900 border-border">
         <CardHeader>
-          <CardTitle className="text-foreground">Manage Campus Drives</CardTitle>
-          <CardDescription>Create and manage campus recruitment drives ({campusDrives.length} total)</CardDescription>
+          <CardTitle className="text-foreground">Manage Clubs</CardTitle>
+          <CardDescription>Create, edit, and manage campus clubs</CardDescription>
         </CardHeader>
         <CardContent>
-          {campusDrives.length === 0 ? (
+          {clubs.length === 0 ? (
             <div className="text-center py-8">
-              <Building2 className="w-10 h-10 mx-auto mb-3 opacity-50 text-muted-foreground" />
-              <p className="text-muted-foreground">No campus drives created yet</p>
+              <Users2 className="w-10 h-10 mx-auto mb-3 opacity-50 text-muted-foreground" />
+              <p className="text-muted-foreground">No clubs created yet</p>
             </div>
           ) : (
             <div className="space-y-4">
-              {campusDrives.map((drive) => (
-                <div key={drive.id} className="border border-border rounded-lg p-4 hover:bg-secondary transition-all">
+              {clubs.map((club) => (
+                <div key={club.id} className="border border-border rounded-lg p-4 hover:bg-secondary transition-all">
                   <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-3">
                     <div>
-                      <p className="text-xs text-muted-foreground">Company</p>
-                      <p className="font-semibold text-foreground">{drive.company}</p>
+                      <p className="text-xs text-muted-foreground">Club Name</p>
+                      <p className="font-semibold text-foreground">{club.name}</p>
                     </div>
                     <div>
-                      <p className="text-xs text-muted-foreground">Drive Date</p>
-                      <p className="font-semibold text-foreground">{new Date(drive.driveDate).toLocaleDateString()}</p>
+                      <p className="text-xs text-muted-foreground">Members</p>
+                      <p className="font-semibold text-foreground">{club.members}+</p>
                     </div>
                     <div>
-                      <p className="text-xs text-muted-foreground">Positions</p>
-                      <p className="font-semibold text-foreground">{drive.positions}</p>
+                      <p className="text-xs text-muted-foreground">Established</p>
+                      <p className="font-semibold text-foreground">{club.establishedYear}</p>
                     </div>
-                    <div className="flex items-end">
-                      <Badge className={
-                        drive.status === 'Upcoming' ? 'bg-yellow-100 text-yellow-800' :
-                        drive.status === 'Ongoing' ? 'bg-green-100 text-green-800' :
-                        'bg-slate-100 text-slate-800'
-                      }>
-                        {drive.status}
-                      </Badge>
+                    <div>
+                      <p className="text-xs text-muted-foreground">President</p>
+                      <p className="font-semibold text-foreground">{club.president.name}</p>
                     </div>
-                  </div>
-                  
-                  <div className="text-sm text-muted-foreground grid grid-cols-2 gap-2 mb-3">
-                    {drive.ctc && <span>CTC: {drive.ctc}</span>}
-                    {drive.venue && <span>Venue: {drive.venue}</span>}
                   </div>
 
-                  {drive.roles && drive.roles.length > 0 && (
-                    <div className="text-sm mb-3">
-                      <p className="text-xs text-muted-foreground mb-1">Roles:</p>
-                      <div className="flex flex-wrap gap-1">
-                        {drive.roles.map((role, idx) => (
-                          <Badge key={idx} variant="outline" className="text-xs">{role}</Badge>
-                        ))}
-                      </div>
-                    </div>
-                  )}
+                  <div className="text-sm text-muted-foreground mb-3 line-clamp-2">
+                    {club.description}
+                  </div>
+
+                  <div className="flex flex-wrap gap-2 mb-3">
+                    {club.tags.slice(0, 3).map((tag, idx) => (
+                      <Badge key={idx} variant="secondary" className="text-xs">
+                        {tag}
+                      </Badge>
+                    ))}
+                    {club.tags.length > 3 && (
+                      <Badge variant="outline" className="text-xs">
+                        +{club.tags.length - 3} more
+                      </Badge>
+                    )}
+                  </div>
 
                   <div className="flex items-center gap-2">
-                    <button className="p-2 hover:bg-secondary rounded-lg transition-all" title="Edit">
+                    <button 
+                      onClick={() => window.open(`/club/${club.id}`, '_blank')}
+                      className="p-2 hover:bg-secondary rounded-lg transition-all" 
+                      title="View"
+                    >
+                      <Eye className="w-4 h-4 text-muted-foreground" />
+                    </button>
+                    <button 
+                      onClick={() => navigate(`/admin/edit-club/${club.id}`)}
+                      className="p-2 hover:bg-secondary rounded-lg transition-all" 
+                      title="Edit"
+                    >
                       <Edit2 className="w-4 h-4 text-muted-foreground" />
                     </button>
                     <button 
                       onClick={() => {
-                        if (window.confirm('Delete this campus drive?')) {
-                          deleteCampusDrive(drive.id);
+                        if (window.confirm('Delete this club?')) {
+                          deleteClub(club.id);
                         }
                       }}
                       className="p-2 hover:bg-red-100 dark:hover:bg-red-900 rounded-lg transition-all" 
+                      title="Delete"
+                    >
+                      <Trash2 className="w-4 h-4 text-red-500" />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+};
+
+// Club Applications Tab Component
+const ClubApplicationsTab = () => {
+  const { applications, loadApplications, updateApplicationStatus, deleteApplication } = useClubApplications();
+
+  useEffect(() => {
+    loadApplications();
+  }, [loadApplications]);
+
+  const pendingApplications = applications.filter(app => app.status === 'pending');
+  const approvedApplications = applications.filter(app => app.status === 'approved');
+  const rejectedApplications = applications.filter(app => app.status === 'rejected');
+
+  const renderApplications = (apps: typeof applications) => {
+    return (
+      <div className="space-y-4">
+        {apps.length === 0 ? (
+          <p className="text-center py-8 text-muted-foreground">No applications</p>
+        ) : (
+          apps.map((app) => (
+            <div key={app.id} className="border border-border rounded-lg p-4 hover:bg-secondary transition-all">
+              <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-3">
+                <div>
+                  <p className="text-xs text-muted-foreground">Name</p>
+                  <p className="font-semibold text-foreground">{app.fullName}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Club</p>
+                  <p className="font-semibold text-foreground">{app.clubName}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Roll Number</p>
+                  <p className="font-semibold text-foreground">{app.universityRollNumber}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Year</p>
+                  <p className="font-semibold text-foreground">{app.year}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Team Interest</p>
+                  <p className="font-semibold text-foreground text-sm">{app.teamInterest}</p>
+                </div>
+              </div>
+
+              <div className="text-sm text-muted-foreground grid grid-cols-3 gap-2 mb-3">
+                <span>Email: {app.email}</span>
+                <span>Phone: {app.phone}</span>
+                <span>Applied: {new Date(app.applicationDate).toLocaleDateString()}</span>
+              </div>
+
+              <div className="flex items-center gap-2">
+                {app.status === 'pending' && (
+                  <>
+                    <button 
+                      onClick={() => updateApplicationStatus(app.id, 'approved')}
+                      className="px-4 py-2 bg-green-100 hover:bg-green-200 text-green-800 rounded-lg transition-all text-sm font-medium"
+                      title="Approve"
+                    >
+                      Approve
+                    </button>
+                    <button 
+                      onClick={() => updateApplicationStatus(app.id, 'rejected')}
+                      className="px-4 py-2 bg-red-100 hover:bg-red-200 text-red-800 rounded-lg transition-all text-sm font-medium"
+                      title="Reject"
+                    >
+                      Reject
+                    </button>
+                  </>
+                )}
+                {app.status !== 'pending' && (
+                  <Badge className={app.status === 'approved' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}>
+                    {app.status.charAt(0).toUpperCase() + app.status.slice(1)}
+                  </Badge>
+                )}
+                <button 
+                  onClick={() => {
+                    if (window.confirm('Delete this application?')) {
+                      deleteApplication(app.id);
+                    }
+                  }}
+                  className="p-2 hover:bg-red-100 dark:hover:bg-red-900 rounded-lg transition-all ml-auto" 
+                  title="Delete"
+                >
+                  <Trash2 className="w-4 h-4 text-red-500" />
+                </button>
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+    );
+  };
+
+  return (
+    <div className="p-6 space-y-6">
+      {/* Summary Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <Card className="bg-white dark:bg-slate-900 border-border">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium text-foreground">Pending</CardTitle>
+            <Users className="w-6 h-6 text-yellow-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold text-foreground">{pendingApplications.length}</div>
+            <p className="text-xs text-muted-foreground mt-1">Applications awaiting review</p>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-white dark:bg-slate-900 border-border">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium text-foreground">Approved</CardTitle>
+            <Users className="w-6 h-6 text-green-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold text-foreground">{approvedApplications.length}</div>
+            <p className="text-xs text-muted-foreground mt-1">Applications approved</p>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-white dark:bg-slate-900 border-border">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium text-foreground">Rejected</CardTitle>
+            <Users className="w-6 h-6 text-red-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold text-foreground">{rejectedApplications.length}</div>
+            <p className="text-xs text-muted-foreground mt-1">Applications rejected</p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Pending Applications */}
+      <Card className="bg-white dark:bg-slate-900 border-border">
+        <CardHeader>
+          <CardTitle className="text-foreground text-yellow-600">Pending Applications</CardTitle>
+          <CardDescription>Review and take action on new applications</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {renderApplications(pendingApplications)}
+        </CardContent>
+      </Card>
+
+      {/* Approved Applications */}
+      <Card className="bg-white dark:bg-slate-900 border-border">
+        <CardHeader>
+          <CardTitle className="text-foreground text-green-600">Approved Applications</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {renderApplications(approvedApplications)}
+        </CardContent>
+      </Card>
+
+      {/* Rejected Applications */}
+      <Card className="bg-white dark:bg-slate-900 border-border">
+        <CardHeader>
+          <CardTitle className="text-foreground text-red-600">Rejected Applications</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {renderApplications(rejectedApplications)}
+        </CardContent>
+      </Card>
+    </div>
+  );
+};
+
+// Payments Tab Component
+const PaymentsTab = () => {
+  const { payments, loadPayments, updatePaymentStatus, deletePayment } = usePayments();
+  const [filterStatus, setFilterStatus] = useState<'all' | 'pending' | 'completed' | 'failed'>('all');
+
+  useEffect(() => {
+    loadPayments();
+  }, [loadPayments]);
+
+  const filteredPayments = payments.filter(p => filterStatus === 'all' ? true : p.status === filterStatus);
+  const totalRevenue = payments
+    .filter(p => p.status === 'completed')
+    .reduce((sum, p) => sum + p.amount, 0);
+  const pendingPayments = payments.filter(p => p.status === 'pending').length;
+  const failedPayments = payments.filter(p => p.status === 'failed').length;
+
+  return (
+    <div className="p-6 space-y-6">
+      {/* Summary Stats */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <Card className="bg-white dark:bg-slate-900 border-border">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium text-foreground">Total Revenue</CardTitle>
+            <Briefcase className="w-6 h-6 text-green-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold text-foreground">₹{totalRevenue.toLocaleString()}</div>
+            <p className="text-xs text-muted-foreground mt-1">Completed payments</p>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-white dark:bg-slate-900 border-border">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium text-foreground">Total Payments</CardTitle>
+            <Users className="w-6 h-6 text-blue-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold text-foreground">{payments.length}</div>
+            <p className="text-xs text-muted-foreground mt-1">All transactions</p>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-white dark:bg-slate-900 border-border">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium text-foreground">Pending</CardTitle>
+            <Users className="w-6 h-6 text-yellow-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold text-foreground">{pendingPayments}</div>
+            <p className="text-xs text-muted-foreground mt-1">Awaiting confirmation</p>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-white dark:bg-slate-900 border-border">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium text-foreground">Failed</CardTitle>
+            <Users className="w-6 h-6 text-red-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold text-foreground">{failedPayments}</div>
+            <p className="text-xs text-muted-foreground mt-1">Failed transactions</p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Payments List */}
+      <Card className="bg-white dark:bg-slate-900 border-border">
+        <CardHeader>
+          <CardTitle className="text-foreground">Payment Transactions</CardTitle>
+          <CardDescription>Manage event payment transactions</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {/* Filter Tabs */}
+          <div className="flex gap-2 mb-6 border-b border-border pb-4">
+            {(['all', 'pending', 'completed', 'failed'] as const).map((status) => (
+              <button
+                key={status}
+                onClick={() => setFilterStatus(status)}
+                className={`px-4 py-2 rounded-lg font-medium text-sm transition-all ${
+                  filterStatus === status
+                    ? 'bg-primary text-primary-foreground'
+                    : 'bg-slate-100 dark:bg-slate-800 text-foreground hover:bg-slate-200 dark:hover:bg-slate-700'
+                }`}
+              >
+                {status.charAt(0).toUpperCase() + status.slice(1)} ({filteredPayments.filter(p => status === 'all' ? true : p.status === status).length})
+              </button>
+            ))}
+          </div>
+
+          {filteredPayments.length === 0 ? (
+            <div className="text-center py-8">
+              <Briefcase className="w-10 h-10 mx-auto mb-3 opacity-50 text-muted-foreground" />
+              <p className="text-muted-foreground">No payments found</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {filteredPayments.map((payment) => (
+                <div key={payment.id} className="border border-border rounded-lg p-4 hover:bg-secondary transition-all">
+                  <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-3">
+                    <div>
+                      <p className="text-xs text-muted-foreground">User</p>
+                      <p className="font-semibold text-foreground">{payment.userName}</p>
+                      <p className="text-xs text-muted-foreground">{payment.userEmail}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">Event</p>
+                      <p className="font-semibold text-foreground">{payment.eventTitle}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">Amount</p>
+                      <p className="font-semibold text-foreground text-lg">₹{payment.amount}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">Method</p>
+                      <Badge className="mt-1 capitalize">
+                        {payment.paymentMethod.replace(/([A-Z])/g, ' $1').trim()}
+                      </Badge>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">Status</p>
+                      <Badge className={`mt-1 ${
+                        payment.status === 'completed' ? 'bg-green-100 text-green-800' :
+                        payment.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                        'bg-red-100 text-red-800'
+                      }`}>
+                        {payment.status.charAt(0).toUpperCase() + payment.status.slice(1)}
+                      </Badge>
+                    </div>
+                  </div>
+
+                  <div className="text-sm text-muted-foreground grid grid-cols-3 gap-2 mb-3">
+                    <span>ID: {payment.id}</span>
+                    <span>TXN: {payment.transactionId}</span>
+                    <span>Date: {new Date(payment.paymentDate).toLocaleDateString()}</span>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    {payment.status === 'pending' && (
+                      <>
+                        <button 
+                          onClick={() => updatePaymentStatus(payment.id, 'completed')}
+                          className="px-4 py-2 bg-green-100 hover:bg-green-200 text-green-800 rounded-lg transition-all text-sm font-medium"
+                          title="Mark as completed"
+                        >
+                          Complete
+                        </button>
+                        <button 
+                          onClick={() => updatePaymentStatus(payment.id, 'failed')}
+                          className="px-4 py-2 bg-red-100 hover:bg-red-200 text-red-800 rounded-lg transition-all text-sm font-medium"
+                          title="Mark as failed"
+                        >
+                          Failed
+                        </button>
+                      </>
+                    )}
+                    <button 
+                      onClick={() => {
+                        if (window.confirm('Delete this payment record?')) {
+                          deletePayment(payment.id);
+                        }
+                      }}
+                      className="p-2 hover:bg-red-100 dark:hover:bg-red-900 rounded-lg transition-all ml-auto" 
                       title="Delete"
                     >
                       <Trash2 className="w-4 h-4 text-red-500" />
