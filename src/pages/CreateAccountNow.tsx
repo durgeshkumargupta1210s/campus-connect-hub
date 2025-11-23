@@ -185,57 +185,6 @@ const CreateAccountNow = () => {
         </div>
       </section>
 
-      {/* Quick Benefits */}
-      <section className="py-20 px-4">
-        <div className="container mx-auto max-w-4xl">
-          <div className="bg-gradient-to-r from-primary/10 to-accent/10 border border-primary/20 rounded-2xl p-12">
-            <div className="grid md:grid-cols-2 gap-12 items-center">
-              <div className="space-y-6">
-                <h2 className="text-3xl font-bold text-foreground">
-                  Everything You Need
-                </h2>
-                <p className="text-lg text-muted-foreground">
-                  Get instant access to all premium features when you create your account.
-                </p>
-
-                <div className="grid grid-cols-2 gap-4">
-                  {benefits.map((benefit, index) => (
-                    <div key={index} className="flex items-center gap-2">
-                      <CheckCircle2 className="w-5 h-5 text-green-500 flex-shrink-0" />
-                      <span className="text-foreground font-medium">{benefit.text}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <div className="space-y-4">
-                <div className="bg-white dark:bg-slate-900 rounded-xl p-6 border border-border shadow-lg">
-                  <div className="flex items-center justify-between mb-4">
-                    <Smartphone className="w-6 h-6 text-primary" />
-                    <span className="text-xs font-semibold text-muted-foreground">RESPONSIVE</span>
-                  </div>
-                  <p className="text-foreground font-semibold mb-2">Mobile Ready</p>
-                  <p className="text-sm text-muted-foreground">
-                    Access your dashboard anytime, anywhere on any device
-                  </p>
-                </div>
-
-                <div className="bg-white dark:bg-slate-900 rounded-xl p-6 border border-border shadow-lg">
-                  <div className="flex items-center justify-between mb-4">
-                    <Cog className="w-6 h-6 text-accent" />
-                    <span className="text-xs font-semibold text-muted-foreground">POWERFUL</span>
-                  </div>
-                  <p className="text-foreground font-semibold mb-2">Customizable</p>
-                  <p className="text-sm text-muted-foreground">
-                    Personalize your experience with preferences and settings
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
       {/* Testimonials */}
       <section className="py-20 px-4 bg-secondary/30">
         <div className="container mx-auto max-w-5xl">
@@ -279,43 +228,6 @@ const CreateAccountNow = () => {
               </Card>
             ))}
           </div>
-        </div>
-      </section>
-
-      {/* CTA Section */}
-      <section className="py-20 px-4">
-        <div className="container mx-auto max-w-3xl">
-          <Card className="bg-gradient-to-br from-primary/5 to-accent/5 border-primary/20">
-            <CardContent className="pt-12 pb-12 text-center space-y-6">
-              <h2 className="text-4xl font-bold text-foreground">
-                Ready to Get Started?
-              </h2>
-              <p className="text-lg text-muted-foreground max-w-xl mx-auto">
-                Join CampusConnect today and unlock a world of opportunities for your college journey.
-              </p>
-
-              <div className="flex flex-col sm:flex-row gap-4 justify-center pt-6">
-                <Button
-                  onClick={() => navigate("/signup")}
-                  className="bg-gradient-accent hover:opacity-90 text-white font-semibold h-12 px-8 flex items-center justify-center gap-2"
-                >
-                  Create Account
-                  <ArrowRight className="w-4 h-4" />
-                </Button>
-                <Button
-                  onClick={() => navigate("/")}
-                  variant="outline"
-                  className="border-primary text-primary hover:bg-primary/10 font-semibold h-12 px-8"
-                >
-                  Learn More
-                </Button>
-              </div>
-
-              <p className="text-sm text-muted-foreground pt-4">
-                ✓ Takes less than 2 minutes to sign up • ✓ No credit card required
-              </p>
-            </CardContent>
-          </Card>
         </div>
       </section>
 

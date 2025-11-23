@@ -100,11 +100,10 @@ const Resources = () => {
               Access curated study materials, training programs, and skill development resources - all in one place!
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button size="lg" className="bg-accent hover:bg-accent/90 text-accent-foreground">
+              <Button size="lg" className="bg-accent hover:bg-accent/90 text-accent-foreground" onClick={() => {
+                document.getElementById('popular-resources')?.scrollIntoView({ behavior: 'smooth' });
+              }}>
                 Browse Resources
-              </Button>
-              <Button size="lg" variant="outline" className="bg-white/10 border-white/20 text-white hover:bg-white/20 backdrop-blur-sm">
-                Upload Resource
               </Button>
             </div>
           </div>
@@ -137,7 +136,7 @@ const Resources = () => {
         </section>
 
         {/* Popular Resources */}
-        <section className="py-20 px-4 bg-secondary">
+        <section id="popular-resources" className="py-20 px-4 bg-secondary">
           <div className="container mx-auto">
             <div className="flex justify-between items-center mb-12">
               <h2 className="text-4xl font-bold">Popular Resources</h2>

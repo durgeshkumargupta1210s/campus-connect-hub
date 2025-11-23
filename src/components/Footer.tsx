@@ -110,7 +110,7 @@ const Footer = () => {
               <ul className="space-y-3 text-white/80 text-sm">
                 <li><a href="/qr-registration" className="hover:text-white transition-colors">QR Registration</a></li>
                 <li><a href="/fast-entry" className="hover:text-white transition-colors">Fast Entry</a></li>
-                <li><a href="/hackathons" className="hover:text-white transition-colors">Hackathons</a></li>
+                <li><a href="/events" className="hover:text-white transition-colors">Events</a></li>
                 <li><a href="/placements" className="hover:text-white transition-colors">Placements</a></li>
                 <li><a href="/resources" className="hover:text-white transition-colors">Resources</a></li>
               </ul>

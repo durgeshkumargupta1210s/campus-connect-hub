@@ -5,7 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/context/AuthContext";
 import Index from "./pages/Index";
-import Hackathons from "./pages/Hackathons";
+import Events from "./pages/Events";
 import Workshops from "./pages/Workshops";
 import Placements from "./pages/Placements";
 import Community from "./pages/Community";
@@ -16,13 +16,13 @@ import AdminAddEvent from "./pages/AdminAddEvent";
 import AdminAddOpportunity from "./pages/AdminAddOpportunity";
 import AdminAddCampusDrive from "./pages/AdminAddCampusDrive";
 import EventDetails from "./pages/EventDetails";
-import Opportunities from "./pages/Opportunities";
 import OpportunityDetail from "./pages/OpportunityDetail";
 import CampusDrives from "./pages/CampusDrives";
 import CampusDriveDetail from "./pages/CampusDriveDetail";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
 import CreateAccountNow from "./pages/CreateAccountNow";
+import ResumeAnalysis from "./pages/ResumeAnalysis";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -39,12 +39,15 @@ const App = () => (
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
           <Route path="/create-account" element={<CreateAccountNow />} />
-          <Route path="/hackathons" element={<Hackathons />} />
+          <Route path="/events" element={<Events />} />
+          <Route path="/events/:eventId" element={<EventDetails />} />
+          <Route path="/hackathons" element={<Events />} />
           <Route path="/hackathons/:eventId" element={<EventDetails />} />
           <Route path="/workshops" element={<Workshops />} />
           <Route path="/workshops/:eventId" element={<EventDetails />} />
           <Route path="/placements" element={<Placements />} />
-          <Route path="/opportunities" element={<Opportunities />} />
+          <Route path="/opportunities" element={<Placements />} />
+          <Route path="/resume-analysis" element={<ResumeAnalysis />} />
           <Route path="/opportunity/:id" element={<OpportunityDetail />} />
           <Route path="/campus-drives" element={<CampusDrives />} />
           <Route path="/campus-drive/:id" element={<CampusDriveDetail />} />

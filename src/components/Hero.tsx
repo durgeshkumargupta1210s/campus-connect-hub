@@ -32,16 +32,13 @@ const Hero = () => {
             >
               Create Account
             </Button>
-            <Button size="lg" variant="outline" className="bg-white/10 border-white/20 text-white hover:bg-white/20 backdrop-blur-sm">
-              Learn More
-            </Button>
           </div>
           
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mt-16 animate-fade-in [animation-delay:0.4s]">
             <FeatureCard 
               icon={<Trophy />} 
-              title="Hackathons" 
-              onClick={() => navigate("/hackathons")}
+              title="Events" 
+              onClick={() => navigate("/events")}
             />
             <FeatureCard 
               icon={<Zap />} 

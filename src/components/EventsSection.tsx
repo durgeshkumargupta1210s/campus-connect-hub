@@ -1,5 +1,6 @@
 import EventCard from "./EventCard";
 import { Button } from "@/components/ui/button";
+import { useNavigate } from "react-router-dom";
 
 const events = [
   {
@@ -29,6 +30,8 @@ const events = [
 ];
 
 const EventsSection = () => {
+  const navigate = useNavigate();
+  
   return (
     <section className="py-20 px-4 bg-background">
       <div className="container mx-auto">
@@ -41,7 +44,7 @@ const EventsSection = () => {
               Don't miss out on exciting campus activities
             </p>
           </div>
-          <Button variant="outline" className="hidden md:block">
+          <Button variant="outline" className="hidden md:block" onClick={() => navigate("/events")}>
             View All Events
           </Button>
         </div>
@@ -53,7 +56,7 @@ const EventsSection = () => {
         </div>
         
         <div className="mt-8 text-center md:hidden">
-          <Button variant="outline" className="w-full sm:w-auto">
+          <Button variant="outline" className="w-full sm:w-auto" onClick={() => navigate("/events")}>
             View All Events
           </Button>
         </div>

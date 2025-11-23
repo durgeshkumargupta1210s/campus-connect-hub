@@ -62,22 +62,6 @@ const Community = () => {
       <Navbar />
       
       <main className="flex-1">
-        {/* Hero Section */}
-        <section className="bg-gradient-hero py-20 px-4">
-          <div className="container mx-auto text-center">
-            <Users className="w-20 h-20 text-white mx-auto mb-6 animate-float" />
-            <h1 className="text-5xl md:text-6xl font-bold text-white mb-6">
-              Clubs & Communities
-            </h1>
-            <p className="text-xl text-white/90 max-w-2xl mx-auto mb-8">
-              Join clubs, connect with like-minded students, and build your campus network!
-            </p>
-            <Button size="lg" className="bg-accent hover:bg-accent/90 text-accent-foreground">
-              Explore All Clubs
-            </Button>
-          </div>
-        </section>
-
         {/* Clubs Grid */}
         <section className="py-20 px-4 bg-background">
           <div className="container mx-auto">
