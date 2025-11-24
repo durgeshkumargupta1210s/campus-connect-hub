@@ -46,171 +46,68 @@ export interface Event {
 
 const EVENTS_KEY = 'campus_connect_events';
 
-// Default sample events
-const DEFAULT_EVENTS: Event[] = [
-  {
-    id: '1',
-    title: "AI/ML Innovation Challenge",
-    date: "March 20-21, 2024",
-    duration: "24 hours",
-    prize: "₹50,000",
-    participants: 120,
-    difficulty: "Advanced",
-    tags: ["AI", "Machine Learning", "Deep Learning"],
-    status: "Open",
-    description: "Build intelligent solutions using cutting-edge AI and ML technologies",
-    category: "Hackathon"
-  },
-  {
-    id: '2',
-    title: "Web3 Hackathon",
-    date: "April 5-6, 2024",
-    duration: "36 hours",
-    prize: "₹75,000",
-    participants: 85,
-    difficulty: "Intermediate",
-    tags: ["Blockchain", "Smart Contracts", "DeFi"],
-    status: "Open",
-    description: "Create decentralized applications and explore blockchain possibilities",
-    category: "Hackathon"
-  },
-  {
-    id: '3',
-    title: "Mobile App Challenge",
-    date: "April 15-16, 2024",
-    duration: "48 hours",
-    prize: "₹60,000",
-    participants: 65,
-    difficulty: "All Levels",
-    tags: ["React Native", "Flutter", "Mobile Dev"],
-    status: "Open",
-    description: "Develop innovative mobile applications for iOS and Android",
-    category: "Hackathon",
-    // Payment fields for this event
-    isPaid: true,
-    price: 299,
-    paymentDeadline: "2024-04-14",
-    paymentMethods: ["card", "upi", "netbanking"]
-  }
-];
+// Removed DEFAULT_EVENTS - all data now comes from backend API
+// This service is kept for type definitions and interface compatibility
+// but actual data operations should use backend API
 
 export const eventService = {
-  // Initialize localStorage with default events if empty
+  // Deprecated: No longer initializes localStorage
+  // Use backend API instead
   initialize: () => {
-    const stored = localStorage.getItem(EVENTS_KEY);
-    if (!stored) {
-      localStorage.setItem(EVENTS_KEY, JSON.stringify(DEFAULT_EVENTS));
-    } else {
-      // Migrate existing events to add missing payment fields
-      try {
-        const events = JSON.parse(stored);
-        let hasUpdates = false;
-        
-        const updatedEvents = events.map((event: Event) => {
-          // Check if this is one of the default events that should have payment fields
-          const defaultEvent = DEFAULT_EVENTS.find(de => de.id === event.id);
-          if (defaultEvent && defaultEvent.isPaid && !event.isPaid) {
-            hasUpdates = true;
-            return { ...event, ...defaultEvent };
-          }
-          return event;
-        });
-        
-        if (hasUpdates) {
-          localStorage.setItem(EVENTS_KEY, JSON.stringify(updatedEvents));
-        }
-      } catch (e) {
-        console.error('Error migrating events:', e);
-      }
-    }
+    console.warn('eventService.initialize() is deprecated. Use backend API instead.');
   },
 
-  // Get all events
+  // Deprecated: No longer returns localStorage data
+  // Use backend API instead
   getAllEvents: (): Event[] => {
-    const stored = localStorage.getItem(EVENTS_KEY);
-    return stored ? JSON.parse(stored) : DEFAULT_EVENTS;
+    console.warn('eventService.getAllEvents() is deprecated. Use backend API instead.');
+    return [];
   },
 
-  // Get events by category
+  // Deprecated: Use backend API instead
   getEventsByCategory: (category: string): Event[] => {
-    const allEvents = eventService.getAllEvents();
-    return allEvents.filter(
-      event => event.category.toLowerCase() === category.toLowerCase()
-    );
+    console.warn('eventService.getEventsByCategory() is deprecated. Use backend API instead.');
+    return [];
   },
 
-  // Get specific event by ID
+  // Deprecated: Use backend API instead
   getEventById: (id: string): Event | undefined => {
-    const allEvents = eventService.getAllEvents();
-    return allEvents.find(event => event.id === id);
+    console.warn('eventService.getEventById() is deprecated. Use backend API instead.');
+    return undefined;
   },
 
-  // Add new event
+  // Deprecated: Use backend API instead
   addEvent: (eventData: Omit<Event, 'id' | 'createdAt'>): Event => {
-    const allEvents = eventService.getAllEvents();
-    
-    const newEvent: Event = {
-      ...eventData,
-      id: `event_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-      createdAt: new Date(),
-      status: eventData.status || "Open",
-      participants: eventData.participants || 0,
-      tags: eventData.tags || []
-    };
-
-    allEvents.push(newEvent);
-    localStorage.setItem(EVENTS_KEY, JSON.stringify(allEvents));
-    
-    console.log(`✅ Event created: ${newEvent.title} (Category: ${newEvent.category})`);
-    return newEvent;
+    console.warn('eventService.addEvent() is deprecated. Use backend API instead.');
+    return {} as Event;
   },
 
-  // Update event
+  // Deprecated: Use backend API instead
   updateEvent: (id: string, updates: Partial<Event>): Event | null => {
-    const allEvents = eventService.getAllEvents();
-    const index = allEvents.findIndex(event => event.id === id);
-    
-    if (index === -1) return null;
-    
-    allEvents[index] = { ...allEvents[index], ...updates };
-    localStorage.setItem(EVENTS_KEY, JSON.stringify(allEvents));
-    
-    console.log(`✅ Event updated: ${allEvents[index].title}`);
-    return allEvents[index];
+    console.warn('eventService.updateEvent() is deprecated. Use backend API instead.');
+    return null;
   },
 
-  // Delete event
+  // Deprecated: Use backend API instead
   deleteEvent: (id: string): boolean => {
-    const allEvents = eventService.getAllEvents();
-    const filtered = allEvents.filter(event => event.id !== id);
-    
-    if (filtered.length === allEvents.length) return false;
-    
-    localStorage.setItem(EVENTS_KEY, JSON.stringify(filtered));
-    console.log(`✅ Event deleted: ${id}`);
-    return true;
+    console.warn('eventService.deleteEvent() is deprecated. Use backend API instead.');
+    return false;
   },
 
-  // Get events count by category
+  // Deprecated: Use backend API instead
   getEventCountByCategory: (category: string): number => {
-    return eventService.getEventsByCategory(category).length;
+    console.warn('eventService.getEventCountByCategory() is deprecated. Use backend API instead.');
+    return 0;
   },
 
-  // Get all categories with event counts
+  // Deprecated: Use backend API instead
   getCategoriesWithCounts: (): { category: string; count: number }[] => {
-    const allEvents = eventService.getAllEvents();
-    const categories = new Set(allEvents.map(e => e.category));
-    
-    return Array.from(categories).map(category => ({
-      category,
-      count: allEvents.filter(e => e.category === category).length
-    }));
+    console.warn('eventService.getCategoriesWithCounts() is deprecated. Use backend API instead.');
+    return [];
   },
 
-  // Clear all events (for testing/reset)
+  // Deprecated: Use backend API instead
   clearAll: () => {
-    localStorage.removeItem(EVENTS_KEY);
-    localStorage.setItem(EVENTS_KEY, JSON.stringify(DEFAULT_EVENTS));
-    console.log("✅ All events cleared and reset to defaults");
+    console.warn('eventService.clearAll() is deprecated. Use backend API instead.');
   }
 };

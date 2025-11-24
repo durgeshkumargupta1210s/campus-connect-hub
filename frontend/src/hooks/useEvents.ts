@@ -1,86 +1,68 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { eventService, Event } from '@/services/eventService';
+import { APIClient, API_ENDPOINTS } from '@/config/api';
 
 export const useEvents = (category?: string) => {
   const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const loadEvents = async () => {
-      try {
-        setLoading(true);
-        // Try to load from backend API first
-        const response = await fetch('http://localhost:5000/api/events', {
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('authToken')}`
-          }
-        });
-        
-        if (response.ok) {
-          const data = await response.json();
-          let backendEvents: Event[] = [];
-          
-          // Handle different response structures
-          if (Array.isArray(data)) {
-            backendEvents = data;
-          } else if (data.events && Array.isArray(data.events)) {
-            backendEvents = data.events;
-          } else if (data.data && Array.isArray(data.data)) {
-            backendEvents = data.data;
-          }
-          
-          // Convert backend format to frontend format
-          const convertedEvents = backendEvents.map((event: any) => ({
-            id: event._id || event.id,
-            title: event.title,
-            date: event.date ? new Date(event.date).toLocaleDateString() : '',
-            time: event.time,
-            location: event.location,
-            description: event.description,
-            category: event.category,
-            duration: event.duration,
-            status: event.status || 'upcoming',
-            capacity: event.capacity,
-            tags: event.tags || [],
-            participants: event.registeredCount || 0,
-            difficulty: 'All Levels',
-            prize: '₹0'
-          }));
-          
-          // Filter by category if provided
-          if (category) {
-            const filtered = convertedEvents.filter(e => 
-              e.category.toLowerCase() === category.toLowerCase()
-            );
-            setEvents(filtered);
-          } else {
-            setEvents(convertedEvents);
-          }
-        } else {
-          // Fallback to localStorage if API fails
-          eventService.initialize();
-          if (category) {
-            setEvents(eventService.getEventsByCategory(category));
-          } else {
-            setEvents(eventService.getAllEvents());
-          }
-        }
+  const loadEvents = useCallback(async () => {
+    try {
+      setLoading(true);
+      // Try to load from backend API first
+      const data = await APIClient.get<{ events?: any[] } | any[]>(API_ENDPOINTS.EVENTS_LIST);
+      
+      let backendEvents: any[] = [];
+      
+      // Handle different response structures
+      if (Array.isArray(data)) {
+        backendEvents = data;
+      } else if (data.events && Array.isArray(data.events)) {
+        backendEvents = data.events;
+      } else if (data.data && Array.isArray(data.data)) {
+        backendEvents = data.data;
+      }
+      
+      // Convert backend format to frontend format
+      const convertedEvents = backendEvents.map((event: any) => ({
+        id: event._id || event.id,
+        title: event.title,
+        date: event.date ? new Date(event.date).toLocaleDateString() : '',
+        time: event.time,
+        location: event.location,
+        description: event.description,
+        category: event.category,
+        duration: event.duration,
+        status: event.status || 'upcoming',
+        capacity: event.capacity,
+        tags: event.tags || [],
+        participants: event.registeredCount || 0,
+        difficulty: 'All Levels',
+        prize: '₹0',
+        imageUrl: event.imageUrl || null // Include imageUrl for poster display
+      }));
+      
+      // Filter by category if provided
+      if (category) {
+        const filtered = convertedEvents.filter(e => 
+          e.category.toLowerCase() === category.toLowerCase()
+        );
+        setEvents(filtered);
+      } else {
+        setEvents(convertedEvents);
+      }
       } catch (error) {
         console.error('Error loading events:', error);
-        // Fallback to localStorage
-        eventService.initialize();
-        if (category) {
-          setEvents(eventService.getEventsByCategory(category));
-        } else {
-          setEvents(eventService.getAllEvents());
-        }
+        // No fallback - show empty state
+        setEvents([]);
       } finally {
-        setLoading(false);
-      }
-    };
-
-    loadEvents();
+      setLoading(false);
+    }
   }, [category]);
+
+  useEffect(() => {
+    loadEvents();
+  }, [loadEvents]);
 
   const addEvent = (eventData: Omit<Event, 'id' | 'createdAt'>) => {
     const newEvent = eventService.addEvent(eventData);
@@ -111,13 +93,10 @@ export const useEvents = (category?: string) => {
     return success;
   };
 
-  const refreshEvents = () => {
-    if (category) {
-      setEvents(eventService.getEventsByCategory(category));
-    } else {
-      setEvents(eventService.getAllEvents());
-    }
-  };
+  const refreshEvents = useCallback(async () => {
+    // Reload from backend instead of localStorage
+    await loadEvents();
+  }, [loadEvents]);
 
   return {
     events,

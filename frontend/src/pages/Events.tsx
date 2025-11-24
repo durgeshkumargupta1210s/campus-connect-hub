@@ -17,7 +17,7 @@ const timeline = [
 
 const Events = () => {
   const navigate = useNavigate();
-  const { events: hackathons, loading } = useEvents("Hackathon");
+  const { events: hackathons, loading } = useEvents(); // Show all events, not just Hackathons
   
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -102,14 +102,27 @@ const Events = () => {
                   className="group text-left hover:no-underline"
                 >
                   <div className="absolute -inset-0.5 bg-gradient-to-r from-primary/20 to-accent/20 rounded-2xl blur opacity-0 group-hover:opacity-100 transition"></div>
-                  <Card className="relative bg-white dark:bg-slate-900 border-border hover:shadow-xl transition-all group-hover:scale-105 h-full flex flex-col cursor-pointer">
+                  <Card className="relative bg-white dark:bg-slate-900 border-border hover:shadow-xl transition-all group-hover:scale-105 h-full flex flex-col cursor-pointer overflow-hidden">
+                    {/* Event Poster */}
+                    {(hack as any).imageUrl && (
+                      <div className="w-full h-48 overflow-hidden">
+                        <img 
+                          src={(hack as any).imageUrl} 
+                          alt={hack.title}
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).style.display = 'none';
+                          }}
+                        />
+                      </div>
+                    )}
                     <CardHeader>
                       <div className="flex items-center justify-between mb-4">
                         <Badge className="bg-accent/20 text-accent hover:bg-accent/30">{hack.status}</Badge>
                         <Badge variant="outline">{hack.difficulty}</Badge>
                       </div>
                       <CardTitle className="text-2xl text-foreground">{hack.title}</CardTitle>
-                      <CardDescription className="text-base mt-2">{hack.description}</CardDescription>
+                      <CardDescription className="text-base mt-2 line-clamp-2">{hack.description}</CardDescription>
                     </CardHeader>
                     <CardContent className="flex-1">
                       <div className="space-y-4">

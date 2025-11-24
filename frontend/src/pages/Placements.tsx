@@ -6,56 +6,13 @@ import { Badge } from "@/components/ui/badge";
 import { Briefcase, Calendar, MapPin, TrendingUp, Building2, GraduationCap, CheckCircle2, Zap, Search, DollarSign, ExternalLink } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
-import { initializeSampleOpportunities } from "@/utils/initializeSampleData";
+// Removed sample data initialization - using backend API
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useOpportunities } from "@/hooks/useOpportunities";
 import { Opportunity } from "@/services/opportunityService";
 
-const placements = [
-  {
-    id: '1',
-    company: "Google",
-    role: "Software Engineer Intern",
-    location: "Bangalore",
-    package: "₹8 LPA",
-    deadline: "March 30, 2024",
-    eligibility: "2024 & 2025 Graduates",
-    type: "Internship",
-    logo: "bg-gradient-to-br from-blue-500 to-blue-600",
-    description: "Work with cutting-edge technologies at Google"
-  },
-  {
-    id: '2',
-    company: "Microsoft",
-    role: "Full Stack Developer",
-    location: "Hyderabad",
-    package: "₹12-15 LPA",
-    deadline: "April 5, 2024",
-    eligibility: "2024 Graduates",
-    type: "Full-Time",
-    logo: "bg-gradient-to-br from-primary to-primary/70",
-    description: "Build scalable solutions for millions of users"
-  },
-  {
-    id: '3',
-    company: "Amazon",
-    role: "SDE I",
-    location: "Mumbai",
-    package: "₹18-22 LPA",
-    deadline: "April 10, 2024",
-    eligibility: "All Graduates",
-    type: "Full-Time",
-    logo: "bg-gradient-to-br from-accent to-accent/70",
-    description: "Lead high-impact projects at Amazon"
-  },
-];
-
-const upcomingDrives = [
-  { company: "TCS", date: "March 25, 2024", roles: "15+ positions", icon: "🏢" },
-  { company: "Infosys", date: "March 28, 2024", roles: "20+ positions", icon: "💼" },
-  { company: "Wipro", date: "April 1, 2024", roles: "10+ positions", icon: "🎯" },
-];
+// Removed dummy data - using backend API
 
 const Placements = () => {
   const navigate = useNavigate();
@@ -65,8 +22,8 @@ const Placements = () => {
   const [filteredOpportunities, setFilteredOpportunities] = useState<Opportunity[]>([]);
 
   useEffect(() => {
-    initializeSampleOpportunities();
-  }, []);
+    loadOpportunities();
+  }, [loadOpportunities]);
 
   useEffect(() => {
     loadOpportunities();

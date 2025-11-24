@@ -53,7 +53,9 @@ export const API_ENDPOINTS = {
   TICKETS_CHECK_IN: (id: string) => `${API_BASE_URL}/tickets/${id}/check-in`,
   
   // Payments
+  PAYMENTS_LIST: `${API_BASE_URL}/payments`,
   PAYMENTS_CREATE: `${API_BASE_URL}/payments`,
+  PAYMENTS_GET: (id: string) => `${API_BASE_URL}/payments/${id}`,
   PAYMENTS_COMPLETE: (id: string) => `${API_BASE_URL}/payments/${id}/complete`,
   PAYMENTS_REFUND: (id: string) => `${API_BASE_URL}/payments/${id}/refund`,
   

@@ -19,49 +19,14 @@ import {
   Briefcase,
   Users2
 } from "lucide-react";
-import { registrationService } from "@/services/registrationService";
-import { eventService } from "@/services/eventService";
-import { groupRegistrationService } from "@/services/groupRegistrationService";
+// Removed localStorage services - using backend API directly
 import { useOpportunities } from "@/hooks/useOpportunities";
 import { useClubs } from "@/hooks/useClubs";
 import { useClubApplications } from "@/hooks/useClubApplications";
 import { usePayments } from "@/hooks/usePayments";
-const eventStats = [
-  { label: "Total Events", value: "24", icon: Calendar, color: "text-primary" },
-  { label: "Total Bookings", value: "1,250", icon: Users, color: "text-accent" },
-  { label: "Upcoming Events", value: "8", icon: Zap, color: "text-primary" },
-  { label: "Revenue", value: "₹2.5L", icon: BarChart3, color: "text-accent" },
-];
-
-const sampleEvents = [
-  {
-    id: 1,
-    title: "Tech Fest 2024",
-    date: "March 15, 2024",
-    location: "Main Auditorium",
-    capacity: 500,
-    registered: 320,
-    status: "Active",
-  },
-  {
-    id: 2,
-    title: "AI/ML Hackathon",
-    date: "March 20-21, 2024",
-    location: "Computer Lab",
-    capacity: 120,
-    registered: 95,
-    status: "Active",
-  },
-  {
-    id: 3,
-    title: "Cultural Night",
-    date: "March 18, 2024",
-    location: "Open Arena",
-    capacity: 800,
-    registered: 650,
-    status: "Active",
-  },
-];
+import { APIClient, API_ENDPOINTS } from "@/config/api";
+import { useToast } from "@/hooks/use-toast";
+import { useEvents } from "@/hooks/useEvents";
 
 const AdminDashboard = () => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -195,6 +160,71 @@ const AdminDashboard = () => {
 
 // Overview Tab Component
 const OverviewTab = () => {
+  const { events, loading: eventsLoading } = useEvents();
+  const [stats, setStats] = useState({
+    totalEvents: 0,
+    totalBookings: 0,
+    upcomingEvents: 0,
+    revenue: 0
+  });
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const loadStats = async () => {
+      try {
+        setLoading(true);
+        // Fetch all events
+        const eventsData = await APIClient.get<{ events?: any[] } | any[]>(API_ENDPOINTS.EVENTS_LIST);
+        const allEvents = Array.isArray(eventsData) ? eventsData : (eventsData.events || []);
+        
+        // Fetch registrations for bookings count
+        const registrationsData = await APIClient.get(API_ENDPOINTS.REGISTRATIONS_LIST);
+        const allRegistrations = Array.isArray(registrationsData) ? registrationsData : (registrationsData.registrations || []);
+        
+        const totalEvents = allEvents.length;
+        const upcomingEvents = allEvents.filter((e: any) => e.status === 'upcoming' || new Date(e.date) >= new Date()).length;
+        const totalBookings = allRegistrations.length;
+        
+        // Calculate revenue from completed payments
+        // Note: Payments endpoint may need to be added to backend
+        let revenue = 0;
+        try {
+          // Get payments from backend
+          const paymentsData = await APIClient.get(API_ENDPOINTS.PAYMENTS_LIST);
+          const payments = Array.isArray(paymentsData) ? paymentsData : (paymentsData.payments || []);
+          revenue = payments
+            .filter((p: any) => p.status === 'completed')
+            .reduce((sum: number, p: any) => sum + (p.amount || 0), 0);
+        } catch (e) {
+          // If payments endpoint doesn't exist, revenue stays 0
+          console.log('Payments endpoint not available yet');
+        }
+        
+        setStats({
+          totalEvents,
+          totalBookings,
+          upcomingEvents,
+          revenue
+        });
+      } catch (error) {
+        console.error('Error loading stats:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    loadStats();
+  }, []);
+
+  const eventStats = [
+    { label: "Total Events", value: stats.totalEvents.toString(), icon: Calendar, color: "text-primary" },
+    { label: "Total Bookings", value: stats.totalBookings.toLocaleString(), icon: Users, color: "text-accent" },
+    { label: "Upcoming Events", value: stats.upcomingEvents.toString(), icon: Zap, color: "text-primary" },
+    { label: "Revenue", value: `₹${(stats.revenue / 1000).toFixed(0)}K`, icon: BarChart3, color: "text-accent" },
+  ];
+
+  const recentEvents = events.slice(0, 3);
+
   return (
     <div className="p-6 space-y-6">
       {/* Stats Grid */}
@@ -208,8 +238,10 @@ const OverviewTab = () => {
                 <Icon className={`w-6 h-6 ${stat.color}`} />
               </CardHeader>
               <CardContent>
-                <div className="text-3xl font-bold text-foreground">{stat.value}</div>
-                <p className="text-xs text-muted-foreground mt-1">Last 30 days</p>
+                <div className="text-3xl font-bold text-foreground">
+                  {loading ? '...' : stat.value}
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">From database</p>
               </CardContent>
             </Card>
           );
@@ -223,21 +255,33 @@ const OverviewTab = () => {
           <CardDescription>Your latest created events</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
-            {sampleEvents.slice(0, 3).map((event) => (
-              <div key={event.id} className="flex items-center justify-between p-4 border border-border rounded-lg hover:bg-secondary transition-all">
-                <div className="flex-1">
-                  <h4 className="font-semibold text-foreground">{event.title}</h4>
-                  <p className="text-sm text-muted-foreground">{event.date} • {event.location}</p>
+          {eventsLoading ? (
+            <div className="text-center py-8">
+              <p className="text-muted-foreground">Loading events...</p>
+            </div>
+          ) : recentEvents.length === 0 ? (
+            <div className="text-center py-8">
+              <p className="text-muted-foreground">No events created yet</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {recentEvents.map((event: any) => (
+                <div key={event.id || event._id} className="flex items-center justify-between p-4 border border-border rounded-lg hover:bg-secondary transition-all">
+                  <div className="flex-1">
+                    <h4 className="font-semibold text-foreground">{event.title}</h4>
+                    <p className="text-sm text-muted-foreground">
+                      {event.date ? new Date(event.date).toLocaleDateString() : 'TBA'} • {event.location || 'TBA'}
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <p className="font-semibold text-foreground">{event.participants || 0}/{event.capacity || 0}</p>
+                    <p className="text-xs text-muted-foreground">Registered</p>
+                  </div>
+                  <Badge className="bg-primary text-primary-foreground ml-4">{event.status || 'upcoming'}</Badge>
                 </div>
-                <div className="text-right">
-                  <p className="font-semibold text-foreground">{event.registered}/{event.capacity}</p>
-                  <p className="text-xs text-muted-foreground">Registered</p>
-                </div>
-                <Badge className="bg-primary text-primary-foreground ml-4">{event.status}</Badge>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>
@@ -250,43 +294,53 @@ const EventsTab = () => {
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
+  const { toast } = useToast();
 
   const loadEvents = async () => {
     try {
       setLoading(true);
-      // Try to load from backend API first
-      const response = await fetch('http://localhost:5000/api/events', {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('authToken')}`
-        }
-      });
+      // Load from backend API
+      const data = await APIClient.get<{ events?: any[] } | any[]>(API_ENDPOINTS.EVENTS_LIST);
       
-      if (response.ok) {
-        const data = await response.json();
-        // Handle different response structures
-        if (Array.isArray(data)) {
-          setEvents(data);
-        } else if (data.events && Array.isArray(data.events)) {
-          setEvents(data.events);
-        } else if (data.data && Array.isArray(data.data)) {
-          setEvents(data.data);
-        } else {
-          // Fallback to localStorage
-          eventService.initialize();
-          setEvents(eventService.getAllEvents());
-        }
-      } else {
-        // Fallback to localStorage if API fails
-        eventService.initialize();
-        setEvents(eventService.getAllEvents());
+      // Handle different response structures
+      let eventsList: any[] = [];
+      if (Array.isArray(data)) {
+        eventsList = data;
+      } else if (data.events && Array.isArray(data.events)) {
+        eventsList = data.events;
+      } else if (data.data && Array.isArray(data.data)) {
+        eventsList = data.data;
       }
+      
+      setEvents(eventsList);
     } catch (error) {
       console.error('Error loading events:', error);
-      // Fallback to localStorage
-      eventService.initialize();
-      setEvents(eventService.getAllEvents());
+      setEvents([]);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleDeleteEvent = async (eventId: string, eventTitle: string) => {
+    if (!window.confirm(`Are you sure you want to delete "${eventTitle}"? This action cannot be undone.`)) {
+      return;
+    }
+
+    try {
+      await APIClient.delete(API_ENDPOINTS.EVENTS_DELETE(eventId));
+      toast({
+        title: "Event Deleted",
+        description: `"${eventTitle}" has been deleted successfully.`,
+      });
+      // Reload events after deletion
+      loadEvents();
+    } catch (error: any) {
+      console.error('Error deleting event:', error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to delete event. Please try again.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -360,13 +414,25 @@ const EventsTab = () => {
                       </td>
                       <td className="py-3 px-4">
                         <div className="flex items-center gap-2">
-                          <button className="p-2 hover:bg-secondary rounded-lg transition-all" title="View">
+                          <button 
+                            onClick={() => navigate(`/events/${event._id || event.id}`)}
+                            className="p-2 hover:bg-secondary rounded-lg transition-all" 
+                            title="View Event Details"
+                          >
                             <Eye className="w-4 h-4 text-muted-foreground" />
                           </button>
-                          <button className="p-2 hover:bg-secondary rounded-lg transition-all" title="Edit">
+                          <button 
+                            onClick={() => navigate(`/admin/edit-event/${event._id || event.id}`)}
+                            className="p-2 hover:bg-secondary rounded-lg transition-all" 
+                            title="Edit Event"
+                          >
                             <Edit2 className="w-4 h-4 text-muted-foreground" />
                           </button>
-                          <button className="p-2 hover:bg-red-100 dark:hover:bg-red-900 rounded-lg transition-all" title="Delete">
+                          <button 
+                            onClick={() => handleDeleteEvent(event._id || event.id, event.title || event.eventName || 'Event')}
+                            className="p-2 hover:bg-red-100 dark:hover:bg-red-900 rounded-lg transition-all" 
+                            title="Delete Event"
+                          >
                             <Trash2 className="w-4 h-4 text-red-500" />
                           </button>
                         </div>
@@ -385,11 +451,33 @@ const EventsTab = () => {
 
 // Bookings Tab Component
 const BookingsTab = () => {
-  registrationService.initialize();
-  groupRegistrationService.initialize();
-  
-  const allRegistrations = registrationService.getAllRegistrations();
-  const allGroupRegistrations = groupRegistrationService.getAllGroupRegistrations();
+  const [allRegistrations, setAllRegistrations] = useState<any[]>([]);
+  const [allGroupRegistrations, setAllGroupRegistrations] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const loadRegistrations = async () => {
+      try {
+        setLoading(true);
+        // Fetch individual registrations from backend
+        const registrationsData = await APIClient.get(API_ENDPOINTS.REGISTRATIONS_LIST);
+        const registrations = Array.isArray(registrationsData) ? registrationsData : (registrationsData.registrations || []);
+        setAllRegistrations(registrations);
+        
+        // Note: Group registrations might need a separate endpoint
+        // For now, we'll set empty array if no endpoint exists
+        setAllGroupRegistrations([]);
+      } catch (error) {
+        console.error('Error loading registrations:', error);
+        setAllRegistrations([]);
+        setAllGroupRegistrations([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    loadRegistrations();
+  }, []);
   
   const totalRegistrations = allRegistrations.length + allGroupRegistrations.length;
 
@@ -402,7 +490,11 @@ const BookingsTab = () => {
           <CardDescription>Solo participants ({allRegistrations.length} total)</CardDescription>
         </CardHeader>
         <CardContent>
-          {allRegistrations.length === 0 ? (
+          {loading ? (
+            <div className="text-center py-8">
+              <p className="text-muted-foreground">Loading registrations...</p>
+            </div>
+          ) : allRegistrations.length === 0 ? (
             <div className="text-center py-8">
               <Users className="w-10 h-10 mx-auto mb-3 opacity-50 text-muted-foreground" />
               <p className="text-muted-foreground">No individual registrations yet</p>
@@ -421,22 +513,23 @@ const BookingsTab = () => {
                 </thead>
                 <tbody>
                   {allRegistrations.map((registration) => (
-                    <tr key={registration.id} className="border-b border-border hover:bg-secondary transition-all">
-                      <td className="py-3 px-3 text-foreground font-medium">{registration.userName}</td>
-                      <td className="py-3 px-3 text-foreground">{registration.userEmail}</td>
-                      <td className="py-3 px-3 text-foreground">{registration.eventTitle}</td>
+                    <tr key={registration._id || registration.id} className="border-b border-border hover:bg-secondary transition-all">
+                      <td className="py-3 px-3 text-foreground font-medium">{registration.user?.name || registration.userName || 'N/A'}</td>
+                      <td className="py-3 px-3 text-foreground">{registration.user?.email || registration.userEmail || 'N/A'}</td>
+                      <td className="py-3 px-3 text-foreground">{registration.event?.title || registration.eventTitle || 'N/A'}</td>
                       <td className="py-3 px-3 text-foreground text-xs">
-                        {new Date(registration.registeredAt).toLocaleDateString()}
+                        {registration.createdAt ? new Date(registration.createdAt).toLocaleDateString() : 
+                         registration.registeredAt ? new Date(registration.registeredAt).toLocaleDateString() : 'N/A'}
                       </td>
                       <td className="py-3 px-3">
                         <Badge 
                           className={
-                            registration.status === "Confirmed" 
+                            registration.status === "confirmed" || registration.status === "Confirmed"
                               ? "bg-primary text-primary-foreground"
                               : "bg-red-500 text-white"
                           }
                         >
-                          {registration.status}
+                          {registration.status || 'pending'}
                         </Badge>
                       </td>
                     </tr>
@@ -455,7 +548,11 @@ const BookingsTab = () => {
           <CardDescription>Group hackathon teams ({allGroupRegistrations.length} teams, {allGroupRegistrations.reduce((sum, t) => sum + t.totalMembers, 0)} members)</CardDescription>
         </CardHeader>
         <CardContent>
-          {allGroupRegistrations.length === 0 ? (
+          {loading ? (
+            <div className="text-center py-8">
+              <p className="text-muted-foreground">Loading team registrations...</p>
+            </div>
+          ) : allGroupRegistrations.length === 0 ? (
             <div className="text-center py-8">
               <Users className="w-10 h-10 mx-auto mb-3 opacity-50 text-muted-foreground" />
               <p className="text-muted-foreground">No team registrations yet</p>

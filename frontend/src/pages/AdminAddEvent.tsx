@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useNavigate, useParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -14,11 +14,14 @@ import { useToast } from "@/hooks/use-toast";
 
 const AddEventPage = () => {
   const navigate = useNavigate();
+  const { id } = useParams();
+  const isEditMode = !!id;
   const { notifyNewEvent } = useEventNotifications();
   const { addEvent, refreshEvents } = useEvents();
   const { toast } = useToast();
   const [successMessage, setSuccessMessage] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
+  const [loading, setLoading] = useState(isEditMode);
   const [formData, setFormData] = useState({
     eventName: "",
     date: "",
@@ -33,6 +36,7 @@ const AddEventPage = () => {
     prize: "",
     difficulty: "All Levels",
     poster: null,
+    posterBase64: null,
     tags: [],
     organizer: "",
     contactEmail: "",
@@ -58,6 +62,77 @@ const AddEventPage = () => {
   });
 
   const [tagInput, setTagInput] = useState("");
+
+  // Load event data if in edit mode
+  useEffect(() => {
+    if (isEditMode && id) {
+      const loadEvent = async () => {
+        try {
+          setLoading(true);
+          const event = await APIClient.get(API_ENDPOINTS.EVENTS_GET(id));
+          
+          // Map backend category to frontend category
+          const categoryReverseMapping: { [key: string]: string } = {
+            "hackathon": "Hackathon",
+            "workshop": "Workshop",
+            "technical": "Placement",
+            "seminar": "Seminar",
+            "cultural": "Fest",
+            "sports": "Competition"
+          };
+          
+          // Format date for input (YYYY-MM-DD)
+          const eventDate = event.date ? new Date(event.date).toISOString().split('T')[0] : '';
+          
+          setFormData({
+            eventName: event.title || "",
+            date: eventDate,
+            time: event.time || "",
+            endTime: "",
+            duration: event.duration || "",
+            location: event.location || "",
+            description: event.description || "",
+            category: categoryReverseMapping[event.category] || event.category || "Technical",
+            capacity: event.capacity?.toString() || "",
+            registrationFee: "",
+            prize: "",
+            difficulty: "All Levels",
+            poster: null,
+            tags: event.tags || [],
+            organizer: "",
+            contactEmail: "",
+            contactPhone: "",
+            isPaid: false,
+            price: "",
+            paymentDeadline: "",
+            paymentMethods: ["card", "upi", "netbanking"],
+            problemStatements: "",
+            judgesCriteria: "",
+            company: "",
+            ctc: "",
+            positions: "",
+            eligibility: "",
+            jobProfile: "",
+            mentor: "",
+            materials: "",
+            prerequisites: "",
+          });
+        } catch (error: any) {
+          console.error('Error loading event:', error);
+          toast({
+            title: "Error Loading Event",
+            description: error.message || "Failed to load event data.",
+            variant: "destructive",
+          });
+          navigate("/admin");
+        } finally {
+          setLoading(false);
+        }
+      };
+      
+      loadEvent();
+    }
+  }, [isEditMode, id, navigate, toast]);
   
   // All supported event categories
   const categories = [
@@ -92,10 +167,36 @@ const AddEventPage = () => {
     }));
   };
 
-  const handleFileUpload = (e) => {
+  const handleFileUpload = async (e) => {
     const file = e.target.files?.[0];
     if (file) {
-      setFormData(prev => ({ ...prev, poster: file }));
+      // Validate file size (max 10MB)
+      if (file.size > 10 * 1024 * 1024) {
+        toast({
+          title: "File Too Large",
+          description: "Please upload an image smaller than 10MB",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        toast({
+          title: "Invalid File Type",
+          description: "Please upload an image file (PNG, JPG, GIF, etc.)",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      // Convert to base64 for storage
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const base64String = reader.result as string;
+        setFormData(prev => ({ ...prev, poster: file, posterBase64: base64String }));
+      };
+      reader.readAsDataURL(file);
     }
   };
 
@@ -117,7 +218,7 @@ const AddEventPage = () => {
       "Sports": "sports"
     };
 
-    const eventData = {
+    const eventData: any = {
       title: formData.eventName,
       description: formData.description,
       date: formData.date, // Send date string as-is, backend will parse it
@@ -132,38 +233,53 @@ const AddEventPage = () => {
       // Only include fields that backend schema supports
     };
     
+    // Add imageUrl if poster is uploaded
+    if (formData.posterBase64) {
+      eventData.imageUrl = formData.posterBase64;
+      console.log('Including imageUrl in event data (length:', formData.posterBase64.length, ')');
+    } else {
+      console.log('No posterBase64 found, imageUrl will not be included');
+    }
+    
+    console.log('Event data being sent:', { ...eventData, imageUrl: eventData.imageUrl ? 'present (' + eventData.imageUrl.length + ' chars)' : 'missing' });
+    
     try {
-      // Call backend API to create event
-      const response = await APIClient.post(API_ENDPOINTS.EVENTS_CREATE, eventData);
+      let response;
       
-      console.log("Event created on backend:", response);
-      
-      // Wait a moment for backend to persist, then show success
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
-      // Also add to local storage for immediate display
-      addEvent({
-        ...eventData,
-        eventName: formData.eventName,
-        registrationFee: formData.registrationFee,
-        prize: formData.prize,
-        difficulty: formData.difficulty,
-      });
-      
-      // Notify subscribers about the new event
-      await notifyNewEvent({
-        name: formData.eventName,
-        date: formData.date,
-        description: formData.description,
-        category: formData.category
-      });
+      if (isEditMode && id) {
+        // Update existing event
+        response = await APIClient.put(API_ENDPOINTS.EVENTS_UPDATE(id), eventData);
+        console.log("Event updated on backend:", response);
+        
+        toast({
+          title: "Event Updated Successfully!",
+          description: `${formData.eventName} has been updated.`,
+        });
+        
+        setSuccessMessage(`Event "${formData.eventName}" updated successfully!`);
+      } else {
+        // Create new event
+        response = await APIClient.post(API_ENDPOINTS.EVENTS_CREATE, eventData);
+        console.log("Event created on backend:", response);
+        
+        // Notify subscribers about the new event
+        await notifyNewEvent({
+          name: formData.eventName,
+          date: formData.date,
+          description: formData.description,
+          category: formData.category
+        });
 
-      toast({
-        title: "Event Created Successfully!",
-        description: `${formData.eventName} has been created and is now live.`,
-      });
+        toast({
+          title: "Event Created Successfully!",
+          description: `${formData.eventName} has been created and is now live.`,
+        });
+        
+        setSuccessMessage(`Event "${formData.eventName}" created successfully!`);
+      }
       
-      setSuccessMessage(`Event "${formData.eventName}" created successfully!`);
+      // Refresh events from backend to ensure the changes are visible
+      await refreshEvents();
       
       // Reset form and navigate after 2 seconds
       setTimeout(() => {
@@ -194,8 +310,8 @@ const AddEventPage = () => {
             <ArrowLeft className="w-5 h-5" />
             Back to Dashboard
           </button>
-          <h1 className="text-3xl font-bold text-white">Create New Event</h1>
-          <p className="text-white/80 mt-2">Fill in the details to create a new campus event</p>
+          <h1 className="text-3xl font-bold text-white">{isEditMode ? "Edit Event" : "Create New Event"}</h1>
+          <p className="text-white/80 mt-2">{isEditMode ? "Update the event details below" : "Fill in the details to create a new campus event"}</p>
         </div>
       </div>
 
@@ -222,6 +338,11 @@ const AddEventPage = () => {
       {/* Form */}
       <div className="py-12 px-4">
         <div className="container mx-auto max-w-4xl">
+          {loading ? (
+            <div className="text-center py-12">
+              <p className="text-muted-foreground">Loading event data...</p>
+            </div>
+          ) : (
           <form onSubmit={handleSubmit} className="space-y-8">
             {/* Basic Information */}
             <Card className="bg-white dark:bg-slate-900 border-border">
@@ -776,11 +897,22 @@ const AddEventPage = () => {
                         <p className="text-foreground font-semibold">Click to upload poster</p>
                         <p className="text-muted-foreground text-sm">PNG, JPG, GIF up to 10MB</p>
                       </div>
-                      {formData.poster && (
-                        <div className="mt-4">
-                          <Badge className="bg-accent text-accent-foreground">
-                            {formData.poster.name}
-                          </Badge>
+                      {(formData.poster || formData.posterBase64) && (
+                        <div className="mt-4 space-y-2">
+                          {formData.poster && (
+                            <Badge className="bg-accent text-accent-foreground">
+                              {formData.poster.name}
+                            </Badge>
+                          )}
+                          {(formData.posterBase64 || formData.poster) && (
+                            <div className="mt-2">
+                              <img 
+                                src={formData.posterBase64 || (formData.poster ? URL.createObjectURL(formData.poster) : '')} 
+                                alt="Event poster preview" 
+                                className="max-w-full h-auto max-h-48 rounded-lg border border-border"
+                              />
+                            </div>
+                          )}
                         </div>
                       )}
                     </div>
@@ -801,11 +933,13 @@ const AddEventPage = () => {
               <Button 
                 type="submit"
                 className="bg-gradient-accent hover:opacity-90 text-white px-8"
+                disabled={loading}
               >
-                Create Event
+                {isEditMode ? "Update Event" : "Create Event"}
               </Button>
             </div>
           </form>
+          )}
         </div>
       </div>
     </div>

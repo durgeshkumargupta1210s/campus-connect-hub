@@ -114,6 +114,14 @@ const App = () => (
             } 
           />
           <Route 
+            path="/admin/edit-event/:id" 
+            element={
+              <ProtectedRoute requiredUserType="admin">
+                <AdminAddEvent />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
             path="/admin/add-opportunity" 
             element={
               <ProtectedRoute requiredUserType="admin">

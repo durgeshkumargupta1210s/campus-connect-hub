@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
@@ -8,19 +8,90 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { ArrowLeft, Calendar, MapPin, Users, Trophy, Clock, Mail, Phone, CheckCircle, AlertCircle, Plus, Trash2, CreditCard } from 'lucide-react';
-import { eventService } from '@/services/eventService';
+import { Event } from '@/services/eventService';
 import { useRegistrations } from '@/hooks/useRegistrations';
 import { useGroupRegistrations } from '@/hooks/useGroupRegistrations';
 import { useAuth } from '@/context/AuthContext';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { APIClient, API_ENDPOINTS } from '@/config/api';
 
 const EventDetails = () => {
   const { eventId } = useParams();
   const navigate = useNavigate();
   const { isLoggedIn, userEmail, userName } = useAuth();
-  const [event, setEvent] = useState(() => 
-    eventId ? eventService.getEventById(eventId) : undefined
-  );
+  const [event, setEvent] = useState<Event | undefined>(undefined);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // Load event from backend API
+  useEffect(() => {
+    const loadEvent = async () => {
+      if (!eventId) {
+        setError('Event ID is missing');
+        setLoading(false);
+        return;
+      }
+
+      try {
+        setLoading(true);
+        setError(null);
+        
+        // Try to fetch from backend API first
+        const backendEvent = await APIClient.get(API_ENDPOINTS.EVENTS_GET(eventId));
+        
+        // Map backend category to frontend category format
+        const categoryMapping: { [key: string]: string } = {
+          "hackathon": "Hackathon",
+          "workshop": "Workshop",
+          "technical": "Placement",
+          "seminar": "Seminar",
+          "cultural": "Fest",
+          "sports": "Competition",
+          "other": "Technical"
+        };
+        
+        // Convert backend format to frontend format
+        const convertedEvent: Event = {
+          id: backendEvent._id || backendEvent.id,
+          title: backendEvent.title,
+          date: backendEvent.date ? new Date(backendEvent.date).toLocaleDateString() : '',
+          time: backendEvent.time,
+          location: backendEvent.location,
+          description: backendEvent.description,
+          category: categoryMapping[backendEvent.category?.toLowerCase()] || backendEvent.category || 'Technical',
+          duration: backendEvent.duration,
+          status: backendEvent.status || 'upcoming',
+          capacity: backendEvent.capacity,
+          tags: backendEvent.tags || [],
+          participants: backendEvent.registeredCount || 0,
+          difficulty: 'All Levels',
+          prize: '₹0',
+          registrationFee: '',
+          organizer: backendEvent.organizer?.name || backendEvent.organizer || '',
+          contactEmail: '',
+          contactPhone: '',
+        };
+        
+        // Add imageUrl if it exists (for poster display)
+        if (backendEvent.imageUrl) {
+          (convertedEvent as any).imageUrl = backendEvent.imageUrl;
+          console.log('Event imageUrl found:', backendEvent.imageUrl.substring(0, 50) + '...');
+        } else {
+          console.log('No imageUrl in backend event');
+        }
+        
+        console.log('Converted event:', convertedEvent);
+        setEvent(convertedEvent);
+      } catch (err: any) {
+        console.error('Error loading event from backend:', err);
+        setError('Event not found');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadEvent();
+  }, [eventId]);
 
   const { register, isRegistered } = useRegistrations(eventId);
   const { registerTeam, isTeamRegistered } = useGroupRegistrations(eventId);
@@ -45,13 +116,28 @@ const EventDetails = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [registrationType, setRegistrationType] = useState<'individual' | 'group'>('individual');
 
-  if (!event) {
+  if (loading) {
+    return (
+      <div className="min-h-screen flex flex-col">
+        <Navbar />
+        <main className="flex-1 bg-background">
+          <div className="container mx-auto py-12 px-4 text-center">
+            <p className="text-muted-foreground">Loading event details...</p>
+          </div>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
+
+  if (error || !event) {
     return (
       <div className="min-h-screen flex flex-col">
         <Navbar />
         <main className="flex-1 bg-background">
           <div className="container mx-auto py-12 px-4 text-center">
             <h1 className="text-2xl font-bold text-foreground mb-4">Event Not Found</h1>
+            <p className="text-muted-foreground mb-4">{error || 'The event you are looking for does not exist.'}</p>
             <Button onClick={() => navigate(-1)} className="bg-primary hover:bg-primary/90">
               Go Back
             </Button>
@@ -62,7 +148,8 @@ const EventDetails = () => {
     );
   }
 
-  const registrationCount = eventService.getEventCountByCategory(event.category);
+  // Registration count comes from event.participants (from backend)
+  const registrationCount = event.participants || 0;
   const userAlreadyRegistered = eventId ? isRegistered(userEmail || '') : false;
   const teamAlreadyRegistered = eventId ? isTeamRegistered(userEmail || '') : false;
   const isGroupEvent = event.category === 'Hackathon'; // Hackathons support group registration
@@ -209,33 +296,71 @@ const EventDetails = () => {
       <Navbar />
       
       <main className="flex-1 bg-background">
-        {/* Header */}
-        <div className="bg-gradient-hero py-8 px-4 border-b border-white/10">
-          <div className="container mx-auto">
+        {/* Event Poster Hero Section */}
+        {(event as any).imageUrl && (
+          <div className="relative w-full h-64 md:h-96 overflow-hidden">
+            <img 
+              src={(event as any).imageUrl} 
+              alt={event.title}
+              className="w-full h-full object-cover"
+              onError={(e) => {
+                console.error('Image failed to load:', (event as any).imageUrl);
+                (e.target as HTMLImageElement).style.display = 'none';
+              }}
+              onLoad={() => {
+                console.log('Poster image loaded successfully');
+              }}
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent"></div>
+            <div className="absolute bottom-0 left-0 right-0 p-6 md:p-8">
+              <div className="container mx-auto">
+                <div className="flex items-center gap-3 mb-3">
+                  <Badge className="bg-accent/20 text-accent">{event.status}</Badge>
+                  {event.difficulty && (
+                    <Badge variant="outline" className="bg-white/20 text-white border-white/30">{event.difficulty}</Badge>
+                  )}
+                </div>
+                <h1 className="text-3xl md:text-5xl font-bold text-white mb-2">
+                  {event.title}
+                </h1>
+                <p className="text-white/90 text-lg line-clamp-2">{event.description}</p>
+              </div>
+            </div>
             <button
               onClick={() => navigate(-1)}
-              className="flex items-center gap-2 text-white hover:text-white/80 transition-colors mb-6"
+              className="absolute top-4 left-4 flex items-center gap-2 bg-black/50 hover:bg-black/70 text-white px-4 py-2 rounded-lg transition-colors backdrop-blur-sm"
             >
               <ArrowLeft className="w-5 h-5" />
               Back
             </button>
-            
-            <div className="flex justify-between items-start">
-              <div>
-                <div className="flex items-center gap-3 mb-3">
-                  <Badge className="bg-accent/20 text-accent">{event.status}</Badge>
-                  {event.difficulty && (
-                    <Badge variant="outline">{event.difficulty}</Badge>
-                  )}
-                </div>
-                <h1 className="text-4xl md:text-5xl font-bold text-white mb-2">
-                  {event.title}
-                </h1>
-                <p className="text-white/80 text-lg">{event.description}</p>
+          </div>
+        )}
+
+        {/* Header (when no poster) */}
+        {!(event as any).imageUrl && (
+          <div className="bg-gradient-hero py-8 px-4 border-b border-white/10">
+            <div className="container mx-auto">
+              <button
+                onClick={() => navigate(-1)}
+                className="flex items-center gap-2 text-white hover:text-white/80 transition-colors mb-6"
+              >
+                <ArrowLeft className="w-5 h-5" />
+                Back
+              </button>
+              
+              <div className="flex items-center gap-3 mb-3">
+                <Badge className="bg-accent/20 text-accent">{event.status}</Badge>
+                {event.difficulty && (
+                  <Badge variant="outline">{event.difficulty}</Badge>
+                )}
               </div>
+              <h1 className="text-4xl md:text-5xl font-bold text-white mb-2">
+                {event.title}
+              </h1>
+              <p className="text-white/80 text-lg">{event.description}</p>
             </div>
           </div>
-        </div>
+        )}
 
         {/* Content */}
         <div className="container mx-auto py-12 px-4">

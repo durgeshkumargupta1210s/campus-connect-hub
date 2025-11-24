@@ -12,36 +12,9 @@ interface Event {
   imageColor: string;
 }
 
-const defaultEvents: Event[] = [
-  {
-    title: "Tech Fest 2024",
-    date: "March 15, 2024",
-    location: "Main Auditorium",
-    attendees: 250,
-    category: "Fest",
-    imageColor: "bg-gradient-to-br from-primary to-primary/70",
-  },
-  {
-    title: "AI/ML Hackathon",
-    date: "March 20-21, 2024",
-    location: "Computer Lab",
-    attendees: 120,
-    category: "Hackathon",
-    imageColor: "bg-gradient-to-br from-accent to-accent/70",
-  },
-  {
-    title: "Placement Drive - TCS",
-    date: "March 25, 2024",
-    location: "Block A",
-    attendees: 180,
-    category: "Placement",
-    imageColor: "bg-gradient-to-br from-primary to-accent",
-  },
-];
-
 const EventsSection = () => {
   const navigate = useNavigate();
-  const [events, setEvents] = useState<Event[]>(defaultEvents);
+  const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -76,17 +49,13 @@ const EventsSection = () => {
             imageColor: getCategoryColor(event.category)
           }));
           
-          if (convertedEvents.length > 0) {
-            setEvents(convertedEvents);
-          } else {
-            setEvents(defaultEvents);
-          }
+          setEvents(convertedEvents);
         } else {
-          setEvents(defaultEvents);
+          setEvents([]);
         }
       } catch (error) {
         console.error('Error loading events:', error);
-        setEvents(defaultEvents);
+        setEvents([]);
       } finally {
         setLoading(false);
       }
