@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
@@ -8,23 +8,33 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { ArrowLeft, CheckCircle, AlertCircle, CreditCard, Smartphone, Landmark, Loader2 } from 'lucide-react';
-import { eventService } from '@/services/eventService';
 import { usePayments } from '@/hooks/usePayments';
-import { useTickets } from '@/hooks/useTickets';
 import { useAuth } from '@/context/AuthContext';
-import { registrationService } from '@/services/registrationService';
-import { emailService } from '@/services/emailService';
+import { APIClient, API_ENDPOINTS } from '@/config/api';
+import { useToast } from '@/hooks/use-toast';
+
+interface Event {
+  id: string;
+  title: string;
+  date: string;
+  location?: string;
+  isPaid: boolean;
+  price: number;
+  paymentMethods?: string[];
+  paymentDeadline?: string;
+  category?: string;
+}
 
 const PaymentCheckout = () => {
   const { eventId } = useParams();
   const navigate = useNavigate();
-  const { userEmail, userName } = useAuth();
+  const { userEmail, userName, isLoggedIn } = useAuth();
   const { createPayment } = usePayments();
-  const { createTicket } = useTickets();
+  const { toast } = useToast();
 
-  const [event, setEvent] = useState(() => 
-    eventId ? eventService.getEventById(eventId) : undefined
-  );
+  const [event, setEvent] = useState<Event | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const [formData, setFormData] = useState({
     fullName: userName || '',
@@ -36,13 +46,90 @@ const PaymentCheckout = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
-  if (!event || !event.isPaid) {
+  // Load event from backend
+  useEffect(() => {
+    const loadEvent = async () => {
+      if (!eventId) {
+        setError('Event ID is missing');
+        setLoading(false);
+        return;
+      }
+
+      if (!isLoggedIn) {
+        setError('Please login to make a payment');
+        setLoading(false);
+        return;
+      }
+
+      try {
+        setLoading(true);
+        setError(null);
+        const backendEvent: any = await APIClient.get(API_ENDPOINTS.EVENTS_GET(eventId));
+
+        // Map backend payment methods to frontend format
+        const paymentMethodMapping: { [key: string]: string } = {
+          'credit_card': 'card',
+          'debit_card': 'card',
+          'upi': 'upi',
+          'net_banking': 'netbanking',
+          'wallet': 'upi'
+        };
+
+        const mappedEvent: Event = {
+          id: backendEvent._id || backendEvent.id,
+          title: backendEvent.title,
+          date: backendEvent.date ? new Date(backendEvent.date).toLocaleDateString() : 'N/A',
+          location: backendEvent.location,
+          isPaid: backendEvent.isPaid || false,
+          price: backendEvent.price || 0,
+          paymentMethods: backendEvent.paymentMethods?.map((m: string) => paymentMethodMapping[m] || m) || ['card', 'upi', 'netbanking'],
+          paymentDeadline: backendEvent.paymentDeadline,
+          category: backendEvent.category
+        };
+
+        if (!mappedEvent.isPaid) {
+          setError('This event is not a paid event');
+          setLoading(false);
+          return;
+        }
+
+        setEvent(mappedEvent);
+      } catch (err: any) {
+        console.error('Error loading event:', err);
+        setError(err.message || 'Failed to load event');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadEvent();
+  }, [eventId, isLoggedIn]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex flex-col">
+        <Navbar />
+        <main className="flex-1 bg-background flex items-center justify-center">
+          <div className="text-center">
+            <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4 text-primary" />
+            <p className="text-muted-foreground">Loading payment page...</p>
+          </div>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
+
+  if (error || !event || !event.isPaid) {
     return (
       <div className="min-h-screen flex flex-col">
         <Navbar />
         <main className="flex-1 bg-background">
           <div className="container mx-auto py-12 px-4 text-center">
-            <h1 className="text-2xl font-bold text-foreground mb-4">Event Not Found</h1>
+            <AlertCircle className="w-12 h-12 mx-auto mb-4 text-red-500" />
+            <h1 className="text-2xl font-bold text-foreground mb-4">
+              {error || 'Event Not Found or Not Available for Payment'}
+            </h1>
             <Button onClick={() => navigate(-1)} className="bg-primary hover:bg-primary/90">
               Go Back
             </Button>
@@ -83,106 +170,83 @@ const PaymentCheckout = () => {
     }
 
     try {
-      // Create payment record
-      const paymentResult = createPayment({
-        eventId: event.id,
-        eventTitle: event.title,
-        userId: formData.email,
-        userEmail: formData.email,
-        userName: formData.fullName,
-        amount: event.price || 0,
-        currency: 'INR',
-        paymentMethod: selectedPaymentMethod,
-        status: 'completed' // Simulated payment - auto-complete for now
-      });
+      // Map frontend payment method to backend format
+      const paymentMethodMapping: { [key: string]: string } = {
+        'card': 'credit_card',
+        'upi': 'upi',
+        'netbanking': 'net_banking'
+      };
 
-      if (!paymentResult.success || !paymentResult.data) {
-        setMessage({ type: 'error', text: paymentResult.error || 'Payment failed' });
+      const backendPaymentMethod = paymentMethodMapping[selectedPaymentMethod] || 'credit_card';
+
+      // Create payment record via backend API
+      const paymentData = {
+        amount: event.price,
+        paymentMethod: backendPaymentMethod,
+        description: `Payment for ${event.title}`,
+        relatedTo: 'ticket',
+        relatedId: event.id
+      };
+
+      const paymentResponse: any = await APIClient.post(API_ENDPOINTS.PAYMENTS_CREATE, paymentData);
+      const payment = paymentResponse.payment || paymentResponse;
+
+      if (!payment || !payment._id) {
+        setMessage({ type: 'error', text: 'Payment creation failed' });
         setIsSubmitting(false);
         return;
       }
 
-      // Create registration record
-      registrationService.initialize();
-      const registrationResult = registrationService.addRegistration({
-        eventId: event.id,
-        eventTitle: event.title,
-        eventCategory: event.category || 'Other',
-        userName: formData.fullName,
-        userEmail: formData.email,
-        userPhone: formData.phone,
-        registrationDate: new Date().toISOString(),
-        status: 'registered',
-        paymentId: paymentResult.data.id,
-        paymentStatus: 'completed'
+      // Complete the payment (simulated - in production, this would be done by payment gateway)
+      const completeResponse = await APIClient.put(API_ENDPOINTS.PAYMENTS_COMPLETE(payment._id), {
+        transactionId: payment.transactionId || `TXN-${Date.now()}`
       });
 
-      // Create ticket
-      const ticketResult = await createTicket(
-        event.id,
-        event.title,
-        event.date,
-        event.location || 'TBD',
-        formData.email,
-        formData.email,
-        formData.fullName,
-        `reg_${Date.now()}`,
-        paymentResult.data.id,
-        undefined, // QR code will be generated on ticket page
-        event.time,
-        undefined,
-        'General'
-      );
-
-      if (!ticketResult.success) {
-        console.warn('Ticket creation failed:', ticketResult.error);
-        // Continue anyway - payment succeeded
+      // Create registration record via backend API
+      // The backend will automatically send confirmation email
+      try {
+        await APIClient.post(API_ENDPOINTS.REGISTRATIONS_CREATE, {
+          eventId: event.id
+        });
+      } catch (regErr: any) {
+        console.warn('Registration creation failed:', regErr);
+        // Continue anyway - payment succeeded and email will be sent
       }
 
-      // Send confirmation email
-      if (ticketResult.data) {
-        await emailService.sendTicketConfirmationEmail(
-          formData.email,
-          formData.fullName,
-          event.title,
-          event.date || 'TBD',
-          event.location || 'TBD',
-          ticketResult.data.ticketNumber,
-          ticketResult.data.verificationCode
-        );
-      }
-
-      // Send registration confirmation email
-      await emailService.sendRegistrationConfirmation(
-        formData.email,
-        formData.fullName,
-        event.title,
-        event.date || 'TBD'
-      );
+      toast({
+        title: "Payment Successful!",
+        description: `Payment of ₹${event.price} completed. Check your email for confirmation.`,
+      });
 
       setMessage({
         type: 'success',
-        text: `✓ Payment of ₹${event.price} successful! Check your email for confirmation...`
+        text: `✓ Payment of ₹${event.price} successful! Redirecting...`
       });
 
       // Redirect to confirmation page after 2 seconds
       setTimeout(() => {
         navigate(`/event/${eventId}/payment-success`, { 
           state: { 
-            transactionId: paymentResult.data?.id,
+            transactionId: payment.transactionId,
             eventId,
             eventTitle: event.title,
             amount: event.price,
             paymentMethod: selectedPaymentMethod,
-            ticketId: ticketResult.data?.id,
-            ticketNumber: ticketResult.data?.ticketNumber
+            paymentId: payment._id
           }
         });
       }, 2000);
-    } catch (err) {
+    } catch (err: any) {
+      console.error('Payment error:', err);
+      const errorMsg = err.message || 'Payment processing failed';
       setMessage({ 
         type: 'error', 
-        text: err instanceof Error ? err.message : 'Payment processing failed'
+        text: errorMsg
+      });
+      toast({
+        title: "Payment Failed",
+        description: errorMsg,
+        variant: "destructive",
       });
     } finally {
       setIsSubmitting(false);

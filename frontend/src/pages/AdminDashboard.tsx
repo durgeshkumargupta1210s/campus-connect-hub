@@ -17,7 +17,10 @@ import {
   Trash2,
   Eye,
   Briefcase,
-  Users2
+  Users2,
+  DollarSign,
+  CreditCard,
+  AlertCircle
 } from "lucide-react";
 // Removed localStorage services - using backend API directly
 import { useOpportunities } from "@/hooks/useOpportunities";
@@ -454,45 +457,109 @@ const BookingsTab = () => {
   const [allRegistrations, setAllRegistrations] = useState<any[]>([]);
   const [allGroupRegistrations, setAllGroupRegistrations] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const loadRegistrations = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      // Fetch individual registrations from backend
+      const registrationsData = await APIClient.get(API_ENDPOINTS.REGISTRATIONS_LIST);
+      const registrations = Array.isArray(registrationsData) ? registrationsData : (registrationsData.registrations || []);
+      setAllRegistrations(registrations);
+      
+      // Note: Group registrations might need a separate endpoint
+      // For now, we'll set empty array if no endpoint exists
+      setAllGroupRegistrations([]);
+    } catch (err: any) {
+      console.error('Error loading registrations:', err);
+      setError(err.message || 'Failed to load registrations');
+      setAllRegistrations([]);
+      setAllGroupRegistrations([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const loadRegistrations = async () => {
-      try {
-        setLoading(true);
-        // Fetch individual registrations from backend
-        const registrationsData = await APIClient.get(API_ENDPOINTS.REGISTRATIONS_LIST);
-        const registrations = Array.isArray(registrationsData) ? registrationsData : (registrationsData.registrations || []);
-        setAllRegistrations(registrations);
-        
-        // Note: Group registrations might need a separate endpoint
-        // For now, we'll set empty array if no endpoint exists
-        setAllGroupRegistrations([]);
-      } catch (error) {
-        console.error('Error loading registrations:', error);
-        setAllRegistrations([]);
-        setAllGroupRegistrations([]);
-      } finally {
-        setLoading(false);
-      }
-    };
-    
     loadRegistrations();
+    // Refresh every 30 seconds to get latest bookings
+    const interval = setInterval(loadRegistrations, 30000);
+    return () => clearInterval(interval);
   }, []);
   
   const totalRegistrations = allRegistrations.length + allGroupRegistrations.length;
+  const paidRegistrations = allRegistrations.filter(r => r.payment && r.payment.status === 'completed').length;
+  const totalRevenue = allRegistrations
+    .filter(r => r.payment && r.payment.status === 'completed')
+    .reduce((sum, r) => sum + (r.payment.amount || 0), 0);
 
   return (
     <div className="p-6 space-y-6">
+      {/* Summary Stats */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <Card className="bg-white dark:bg-slate-900 border-border">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium text-foreground">Total Bookings</CardTitle>
+            <Users className="w-6 h-6 text-blue-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold text-foreground">{totalRegistrations}</div>
+            <p className="text-xs text-muted-foreground mt-1">All registrations</p>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-white dark:bg-slate-900 border-border">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium text-foreground">Paid Bookings</CardTitle>
+            <CreditCard className="w-6 h-6 text-green-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold text-foreground">{paidRegistrations}</div>
+            <p className="text-xs text-muted-foreground mt-1">With completed payment</p>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-white dark:bg-slate-900 border-border">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium text-foreground">Revenue from Bookings</CardTitle>
+            <DollarSign className="w-6 h-6 text-accent" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold text-foreground">₹{totalRevenue.toLocaleString()}</div>
+            <p className="text-xs text-muted-foreground mt-1">From paid registrations</p>
+          </CardContent>
+        </Card>
+      </div>
+
       {/* Individual Registrations */}
       <Card className="bg-white dark:bg-slate-900 border-border">
         <CardHeader>
-          <CardTitle className="text-foreground">Individual Registrations</CardTitle>
-          <CardDescription>Solo participants ({allRegistrations.length} total)</CardDescription>
+          <div className="flex justify-between items-center">
+            <div>
+              <CardTitle className="text-foreground">Individual Registrations</CardTitle>
+              <CardDescription>Solo participants ({allRegistrations.length} total, {paidRegistrations} paid)</CardDescription>
+            </div>
+            <Button
+              onClick={loadRegistrations}
+              variant="outline"
+              className="text-foreground border-border hover:bg-secondary"
+              disabled={loading}
+            >
+              {loading ? 'Refreshing...' : 'Refresh'}
+            </Button>
+          </div>
         </CardHeader>
         <CardContent>
           {loading ? (
             <div className="text-center py-8">
               <p className="text-muted-foreground">Loading registrations...</p>
+            </div>
+          ) : error ? (
+            <div className="text-center py-8 text-red-500">
+              <AlertCircle className="w-10 h-10 mx-auto mb-3 opacity-50" />
+              <p>Error loading registrations: {error}</p>
+              <Button onClick={loadRegistrations} className="mt-4">Try Again</Button>
             </div>
           ) : allRegistrations.length === 0 ? (
             <div className="text-center py-8">
@@ -507,33 +574,83 @@ const BookingsTab = () => {
                     <th className="text-left py-3 px-3 font-semibold text-foreground">Name</th>
                     <th className="text-left py-3 px-3 font-semibold text-foreground">Email</th>
                     <th className="text-left py-3 px-3 font-semibold text-foreground">Event</th>
-                    <th className="text-left py-3 px-3 font-semibold text-foreground">Date</th>
+                    <th className="text-left py-3 px-3 font-semibold text-foreground">Registration Date</th>
+                    <th className="text-left py-3 px-3 font-semibold text-foreground">Payment</th>
                     <th className="text-left py-3 px-3 font-semibold text-foreground">Status</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {allRegistrations.map((registration) => (
-                    <tr key={registration._id || registration.id} className="border-b border-border hover:bg-secondary transition-all">
-                      <td className="py-3 px-3 text-foreground font-medium">{registration.user?.name || registration.userName || 'N/A'}</td>
-                      <td className="py-3 px-3 text-foreground">{registration.user?.email || registration.userEmail || 'N/A'}</td>
-                      <td className="py-3 px-3 text-foreground">{registration.event?.title || registration.eventTitle || 'N/A'}</td>
-                      <td className="py-3 px-3 text-foreground text-xs">
-                        {registration.createdAt ? new Date(registration.createdAt).toLocaleDateString() : 
-                         registration.registeredAt ? new Date(registration.registeredAt).toLocaleDateString() : 'N/A'}
-                      </td>
-                      <td className="py-3 px-3">
-                        <Badge 
-                          className={
-                            registration.status === "confirmed" || registration.status === "Confirmed"
-                              ? "bg-primary text-primary-foreground"
-                              : "bg-red-500 text-white"
-                          }
-                        >
-                          {registration.status || 'pending'}
-                        </Badge>
-                      </td>
-                    </tr>
-                  ))}
+                  {allRegistrations.map((registration) => {
+                    const payment = registration.payment;
+                    const paymentMethodMapping: { [key: string]: string } = {
+                      'credit_card': 'Card',
+                      'debit_card': 'Card',
+                      'upi': 'UPI',
+                      'net_banking': 'Net Banking',
+                      'wallet': 'Wallet'
+                    };
+                    
+                    return (
+                      <tr key={registration._id || registration.id} className="border-b border-border hover:bg-secondary transition-all">
+                        <td className="py-3 px-3 text-foreground font-medium">{registration.user?.name || registration.userName || 'N/A'}</td>
+                        <td className="py-3 px-3 text-foreground">{registration.user?.email || registration.userEmail || 'N/A'}</td>
+                        <td className="py-3 px-3 text-foreground">
+                          <div>
+                            <p className="font-medium">{registration.event?.title || registration.eventTitle || 'N/A'}</p>
+                            {registration.event?.isPaid && (
+                              <p className="text-xs text-muted-foreground">Paid Event • ₹{registration.event?.price || 0}</p>
+                            )}
+                          </div>
+                        </td>
+                        <td className="py-3 px-3 text-foreground text-xs">
+                          {registration.createdAt ? new Date(registration.createdAt).toLocaleDateString() : 
+                           registration.registeredAt ? new Date(registration.registeredAt).toLocaleDateString() : 'N/A'}
+                        </td>
+                        <td className="py-3 px-3">
+                          {payment ? (
+                            <div className="space-y-1">
+                              <div className="flex items-center gap-2">
+                                <Badge className="bg-green-500/20 text-green-600 dark:text-green-400 text-xs">
+                                  Paid
+                                </Badge>
+                                <span className="font-semibold text-foreground text-xs">₹{payment.amount}</span>
+                              </div>
+                              <p className="text-xs text-muted-foreground">
+                                {paymentMethodMapping[payment.paymentMethod] || payment.paymentMethod}
+                              </p>
+                              <p className="text-xs text-muted-foreground font-mono">
+                                {payment.transactionId}
+                              </p>
+                              {payment.paidAt && (
+                                <p className="text-xs text-muted-foreground">
+                                  {new Date(payment.paidAt).toLocaleDateString()}
+                                </p>
+                              )}
+                            </div>
+                          ) : registration.event?.isPaid ? (
+                            <Badge className="bg-yellow-500/20 text-yellow-600 dark:text-yellow-400 text-xs">
+                              Payment Pending
+                            </Badge>
+                          ) : (
+                            <Badge className="bg-gray-500/20 text-gray-600 dark:text-gray-400 text-xs">
+                              Free Event
+                            </Badge>
+                          )}
+                        </td>
+                        <td className="py-3 px-3">
+                          <Badge 
+                            className={
+                              registration.status === "confirmed" || registration.status === "Confirmed" || registration.status === "registered"
+                                ? "bg-primary text-primary-foreground"
+                                : "bg-red-500 text-white"
+                            }
+                          >
+                            {registration.status || 'pending'}
+                          </Badge>
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
@@ -1139,14 +1256,32 @@ const PaymentsTab = () => {
                     {payment.status === 'pending' && (
                       <>
                         <button 
-                          onClick={() => updatePaymentStatus(payment.id, 'completed')}
+                          onClick={async () => {
+                            const result = await updatePaymentStatus(payment.id, 'completed');
+                            if (result.success) {
+                              toast({
+                                title: "Payment Completed",
+                                description: "Payment status updated successfully.",
+                              });
+                              loadPayments();
+                            }
+                          }}
                           className="px-4 py-2 bg-green-100 hover:bg-green-200 text-green-800 rounded-lg transition-all text-sm font-medium"
                           title="Mark as completed"
                         >
                           Complete
                         </button>
                         <button 
-                          onClick={() => updatePaymentStatus(payment.id, 'failed')}
+                          onClick={async () => {
+                            const result = await updatePaymentStatus(payment.id, 'failed');
+                            if (result.success) {
+                              toast({
+                                title: "Payment Failed",
+                                description: "Payment status updated to failed.",
+                              });
+                              loadPayments();
+                            }
+                          }}
                           className="px-4 py-2 bg-red-100 hover:bg-red-200 text-red-800 rounded-lg transition-all text-sm font-medium"
                           title="Mark as failed"
                         >
@@ -1155,9 +1290,22 @@ const PaymentsTab = () => {
                       </>
                     )}
                     <button 
-                      onClick={() => {
-                        if (window.confirm('Delete this payment record?')) {
-                          deletePayment(payment.id);
+                      onClick={async () => {
+                        if (window.confirm('Are you sure you want to delete this payment record? This action cannot be undone.')) {
+                          const result = await deletePayment(payment.id);
+                          if (result.success) {
+                            toast({
+                              title: "Payment Deleted",
+                              description: "Payment record has been deleted.",
+                            });
+                            loadPayments();
+                          } else {
+                            toast({
+                              title: "Error",
+                              description: result.error || "Failed to delete payment.",
+                              variant: "destructive",
+                            });
+                          }
                         }
                       }}
                       className="p-2 hover:bg-red-100 dark:hover:bg-red-900 rounded-lg transition-all ml-auto" 

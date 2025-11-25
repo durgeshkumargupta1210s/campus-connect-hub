@@ -14,11 +14,13 @@ import { useGroupRegistrations } from '@/hooks/useGroupRegistrations';
 import { useAuth } from '@/context/AuthContext';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { APIClient, API_ENDPOINTS } from '@/config/api';
+import { useToast } from '@/hooks/use-toast';
 
 const EventDetails = () => {
   const { eventId } = useParams();
   const navigate = useNavigate();
   const { isLoggedIn, userEmail, userName } = useAuth();
+  const { toast } = useToast();
   const [event, setEvent] = useState<Event | undefined>(undefined);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -50,6 +52,15 @@ const EventDetails = () => {
           "other": "Technical"
         };
         
+        // Map backend payment methods to frontend format
+        const paymentMethodMapping: { [key: string]: string } = {
+          'credit_card': 'card',
+          'debit_card': 'card',
+          'upi': 'upi',
+          'net_banking': 'netbanking',
+          'wallet': 'upi'
+        };
+
         // Convert backend format to frontend format
         const convertedEvent: Event = {
           id: backendEvent._id || backendEvent.id,
@@ -70,6 +81,11 @@ const EventDetails = () => {
           organizer: backendEvent.organizer?.name || backendEvent.organizer || '',
           contactEmail: '',
           contactPhone: '',
+          // Payment fields
+          isPaid: backendEvent.isPaid || false,
+          price: backendEvent.price || 0,
+          paymentMethods: backendEvent.paymentMethods?.map((m: string) => paymentMethodMapping[m] || m) || [],
+          paymentDeadline: backendEvent.paymentDeadline,
         };
         
         // Add imageUrl if it exists (for poster display)
@@ -81,6 +97,7 @@ const EventDetails = () => {
         }
         
         console.log('Converted event:', convertedEvent);
+        console.log('Event isPaid:', convertedEvent.isPaid, 'price:', convertedEvent.price);
         setEvent(convertedEvent);
       } catch (err: any) {
         console.error('Error loading event from backend:', err);
@@ -633,13 +650,36 @@ const EventDetails = () => {
                   {event.isPaid ? (
                     // Paid Event - Show Payment Button
                     <Button
-                      onClick={() => navigate(`/event/${eventId}/checkout`)}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        if (!eventId) {
+                          console.error('Event ID is missing');
+                          toast({
+                            title: "Error",
+                            description: "Event ID is missing. Please try again.",
+                            variant: "destructive",
+                          });
+                          return;
+                        }
+                        if (!isLoggedIn) {
+                          toast({
+                            title: "Login Required",
+                            description: "Please login to proceed with payment.",
+                            variant: "destructive",
+                          });
+                          navigate('/login');
+                          return;
+                        }
+                        console.log('Navigating to checkout for event:', eventId);
+                        navigate(`/event/${eventId}/checkout`, { replace: false });
+                      }}
                       disabled={userAlreadyRegistered}
                       className="w-full bg-gradient-accent hover:opacity-90 text-white mb-2"
                       size="lg"
                     >
                       <CreditCard className="w-4 h-4 mr-2" />
-                      {userAlreadyRegistered ? 'Already Registered' : 'Proceed to Payment'}
+                      {!isLoggedIn ? 'Login to Pay' : userAlreadyRegistered ? 'Already Registered' : 'Proceed to Payment'}
                     </Button>
                   ) : (
                     <>

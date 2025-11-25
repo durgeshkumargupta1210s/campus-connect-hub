@@ -29,6 +29,19 @@ const eventSchema = new mongoose.Schema({
     type: Number,
     default: 0
   },
+  isPaid: {
+    type: Boolean,
+    default: false
+  },
+  price: {
+    type: Number,
+    default: 0
+  },
+  paymentMethods: [{
+    type: String,
+    enum: ['credit_card', 'debit_card', 'upi', 'net_banking', 'wallet']
+  }],
+  paymentDeadline: Date,
   organizer: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Club'

@@ -1,6 +1,7 @@
 import Registration from '../models/Registration.js';
 import Event from '../models/Event.js';
 import User from '../models/User.js';
+import { sendRegistrationConfirmation } from '../utils/emailService.js';
 
 export const registerEvent = async (req, res) => {
   try {
@@ -27,9 +28,46 @@ export const registerEvent = async (req, res) => {
     await event.save();
 
     // Add to user's registrations
+    const user = await User.findById(req.user._id);
     await User.findByIdAndUpdate(req.user._id, {
       $push: { registeredEvents: registration._id }
     });
+
+    // Send confirmation email for workshops or if there's a payment
+    const isWorkshop = event.category === 'workshop';
+    
+    // Check if there's a payment for this registration
+    const Payment = (await import('../models/Payment.js')).default;
+    const payment = await Payment.findOne({
+      user: req.user._id,
+      $or: [
+        { relatedTo: 'registration', relatedId: registration._id },
+        { relatedTo: 'ticket', relatedId: event._id }
+      ],
+      status: 'completed'
+    });
+
+    const isPaidEvent = !!payment;
+    
+    // Send email for workshops or paid events
+    if (isWorkshop || isPaidEvent) {
+      const eventDate = event.date ? new Date(event.date).toLocaleDateString('en-IN', {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      }) : 'TBA';
+
+      await sendRegistrationConfirmation(
+        user.email,
+        user.name,
+        event.title,
+        eventDate,
+        event.location || 'TBA',
+        isPaidEvent,
+        payment ? payment.amount : 0
+      );
+    }
 
     res.status(201).json({
       message: 'Registered successfully',
@@ -42,18 +80,54 @@ export const registerEvent = async (req, res) => {
 
 export const getRegistrations = async (req, res) => {
   try {
-    const { page = 1, limit = 10 } = req.query;
-    const registrations = await Registration.find({ user: req.user._id })
-      .populate('event')
+    const { page = 1, limit = 100 } = req.query;
+    
+    // Admin can see all registrations, regular users see only their own
+    let filter = {};
+    if (req.user.role !== 'admin') {
+      filter.user = req.user._id;
+    }
+
+    const registrations = await Registration.find(filter)
+      .populate('event', 'title date location category isPaid price')
+      .populate('user', 'name email')
       .limit(limit * 1)
       .skip((page - 1) * limit)
       .sort({ registeredAt: -1 })
       .exec();
 
-    const count = await Registration.countDocuments({ user: req.user._id });
+    // Fetch payment information for each registration
+    const Payment = (await import('../models/Payment.js')).default;
+    const registrationsWithPayments = await Promise.all(
+      registrations.map(async (registration) => {
+        const registrationObj = registration.toObject();
+        
+        // Find payment for this registration
+        const payment = await Payment.findOne({
+          user: registration.user._id,
+          relatedTo: 'ticket',
+          relatedId: registration.event._id,
+          status: 'completed'
+        }).sort({ createdAt: -1 });
+
+        if (payment) {
+          registrationObj.payment = {
+            transactionId: payment.transactionId,
+            amount: payment.amount,
+            paymentMethod: payment.paymentMethod,
+            status: payment.status,
+            paidAt: payment.paidAt
+          };
+        }
+        
+        return registrationObj;
+      })
+    );
+
+    const count = await Registration.countDocuments(filter);
 
     res.json({
-      registrations,
+      registrations: registrationsWithPayments,
       totalPages: Math.ceil(count / limit),
       currentPage: page,
       total: count

@@ -5,18 +5,25 @@ import Footer from '@/components/Footer';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { CheckCircle, Download, Home, FileText, CreditCard, Calendar, Ticket, MapPin } from 'lucide-react';
-import { eventService } from '@/services/eventService';
-import { ticketService } from '@/services/ticketService';
+import { CheckCircle, Download, Home, FileText, CreditCard, Calendar, Ticket, MapPin, Loader2 } from 'lucide-react';
+import { APIClient, API_ENDPOINTS } from '@/config/api';
+
+interface Event {
+  id: string;
+  title: string;
+  date: string;
+  location?: string;
+  category?: string;
+}
 
 const PaymentSuccess = () => {
   const { eventId } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
   
-  const [event, setEvent] = useState(() => 
-    eventId ? eventService.getEventById(eventId) : undefined
-  );
+  const [event, setEvent] = useState<Event | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const state = location.state as {
     transactionId?: string;
@@ -24,31 +31,80 @@ const PaymentSuccess = () => {
     eventTitle?: string;
     amount?: number;
     paymentMethod?: string;
-    ticketId?: string;
-    ticketNumber?: string;
+    paymentId?: string;
   } | null;
 
-  const [ticket, setTicket] = useState(() => {
-    if (state?.ticketId) {
-      return ticketService.getTicketById(state.ticketId);
-    }
-    return undefined;
-  });
-
+  // Load event from backend
   useEffect(() => {
-    if (!state) {
-      // If no payment state, redirect back
-      navigate('/');
-    }
-  }, [state, navigate]);
+    const loadEvent = async () => {
+      if (!eventId) {
+        setError('Event ID is missing');
+        setLoading(false);
+        return;
+      }
 
-  if (!event || !state) {
+      try {
+        setLoading(true);
+        setError(null);
+        const backendEvent: any = await APIClient.get(API_ENDPOINTS.EVENTS_GET(eventId));
+
+        const categoryMapping: { [key: string]: string } = {
+          "hackathon": "Hackathon",
+          "workshop": "Workshop",
+          "technical": "Placement",
+          "seminar": "Seminar",
+          "cultural": "Fest",
+          "sports": "Competition",
+          "other": "Technical"
+        };
+
+        const mappedEvent: Event = {
+          id: backendEvent._id || backendEvent.id,
+          title: backendEvent.title,
+          date: backendEvent.date ? new Date(backendEvent.date).toLocaleDateString() : 'N/A',
+          location: backendEvent.location,
+          category: categoryMapping[backendEvent.category?.toLowerCase()] || backendEvent.category || 'Technical'
+        };
+
+        setEvent(mappedEvent);
+      } catch (err: any) {
+        console.error('Error loading event:', err);
+        setError(err.message || 'Failed to load event');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadEvent();
+  }, [eventId]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex flex-col">
+        <Navbar />
+        <main className="flex-1 bg-background flex items-center justify-center">
+          <div className="text-center">
+            <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4 text-primary" />
+            <p className="text-muted-foreground">Loading payment confirmation...</p>
+          </div>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
+
+  if (error || !event) {
     return (
       <div className="min-h-screen flex flex-col">
         <Navbar />
         <main className="flex-1 bg-background">
           <div className="container mx-auto py-12 px-4 text-center">
-            <h1 className="text-2xl font-bold text-foreground mb-4">Invalid Payment State</h1>
+            <h1 className="text-2xl font-bold text-foreground mb-4">
+              {error || 'Event Not Found'}
+            </h1>
+            <p className="text-muted-foreground mb-6">
+              {error || 'The event associated with this payment could not be found.'}
+            </p>
             <Button onClick={() => navigate('/')} className="bg-primary hover:bg-primary/90">
               Back to Home
             </Button>
@@ -57,6 +113,12 @@ const PaymentSuccess = () => {
         <Footer />
       </div>
     );
+  }
+
+  // If no state but we have event, show success page with available data
+  if (!state) {
+    // Allow showing success page even without state (e.g., direct URL access)
+    // Use defaults for missing payment info
   }
 
   const getPaymentMethodLabel = (method: string) => {
@@ -113,7 +175,9 @@ const PaymentSuccess = () => {
                     <div className="flex justify-between items-start">
                       <div>
                         <p className="text-sm text-muted-foreground">Transaction ID</p>
-                        <p className="font-mono text-foreground font-semibold">{state.transactionId || 'N/A'}</p>
+                        <p className="font-mono text-foreground font-semibold">
+                          {state?.transactionId || state?.paymentId || 'N/A'}
+                        </p>
                       </div>
                       <Badge className="bg-green-500/20 text-green-600 dark:text-green-400">
                         Completed
@@ -125,12 +189,16 @@ const PaymentSuccess = () => {
                         <p className="text-sm text-muted-foreground">Payment Method</p>
                         <div className="flex items-center gap-2 mt-1">
                           <CreditCard className="w-4 h-4 text-primary" />
-                          <p className="font-semibold text-foreground">{getPaymentMethodLabel(state.paymentMethod || '')}</p>
+                          <p className="font-semibold text-foreground">
+                            {state?.paymentMethod ? getPaymentMethodLabel(state.paymentMethod) : 'N/A'}
+                          </p>
                         </div>
                       </div>
                       <div>
                         <p className="text-sm text-muted-foreground">Amount Paid</p>
-                        <p className="font-semibold text-foreground text-lg">₹{state.amount}</p>
+                        <p className="font-semibold text-foreground text-lg">
+                          {state?.amount ? `₹${state.amount}` : 'N/A'}
+                        </p>
                       </div>
                     </div>
 
@@ -171,43 +239,32 @@ const PaymentSuccess = () => {
                     )}
                   </div>
 
-                  {/* Ticket Info */}
-                  {ticket && (
-                    <div className="space-y-4 border-b border-border pb-6">
-                      <h3 className="font-semibold text-foreground text-lg flex items-center gap-2">
-                        <Ticket className="w-5 h-5 text-accent" />
-                        Your Ticket
-                      </h3>
+                  {/* Registration Confirmation */}
+                  <div className="space-y-4 border-b border-border pb-6">
+                    <h3 className="font-semibold text-foreground text-lg flex items-center gap-2">
+                      <Ticket className="w-5 h-5 text-accent" />
+                      Registration Confirmed
+                    </h3>
 
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                          <p className="text-sm text-muted-foreground">Ticket Number</p>
-                          <p className="font-mono font-bold text-foreground text-lg">{ticket.ticketNumber}</p>
-                        </div>
-                        <div>
-                          <p className="text-sm text-muted-foreground">Verification Code</p>
-                          <p className="font-mono font-bold text-accent text-lg">{ticket.verificationCode}</p>
-                        </div>
-                      </div>
-
-                      <div className="flex justify-center p-4 bg-secondary/50 rounded-lg">
-                        <div className="bg-white p-2 rounded border-2 border-primary">
-                          <div className="w-40 h-40 bg-primary/10 flex items-center justify-center rounded text-sm text-muted-foreground text-center">
-                            🎫<br/>QR Code<br/>(View in My Tickets)
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="p-3 bg-yellow-500/10 border border-yellow-500/20 rounded-lg">
-                        <p className="text-xs text-muted-foreground mb-1">📋 Entry Instructions</p>
-                        <ul className="text-xs text-foreground/80 space-y-1">
-                          <li>✓ Show this verification code or QR code at entry</li>
-                          <li>✓ Arrive 15 minutes before event start time</li>
-                          <li>✓ Check your email for detailed ticket information</li>
-                        </ul>
-                      </div>
+                    <div className="p-3 bg-green-500/10 border border-green-500/20 rounded-lg">
+                      <p className="text-sm text-foreground mb-2">
+                        ✓ Your registration for <strong>{event.title}</strong> has been confirmed!
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        A confirmation email has been sent to your registered email address with all the details.
+                      </p>
                     </div>
-                  )}
+
+                    <div className="p-3 bg-yellow-500/10 border border-yellow-500/20 rounded-lg">
+                      <p className="text-xs text-muted-foreground mb-1">📋 Entry Instructions</p>
+                      <ul className="text-xs text-foreground/80 space-y-1">
+                        <li>✓ Check your email for the confirmation and ticket details</li>
+                        <li>✓ Arrive 15 minutes before event start time</li>
+                        <li>✓ Bring a valid ID for verification at the venue</li>
+                        <li>✓ View your registration in "My Registrations"</li>
+                      </ul>
+                    </div>
+                  </div>
 
                   {/* Next Steps */}
                   <div className="space-y-3 p-4 bg-blue-500/10 rounded-lg border border-blue-500/20">

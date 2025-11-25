@@ -19,8 +19,22 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, requir
     return <Navigate to="/login" replace />;
   }
 
-  // If user type doesn't match required type, show access denied
-  if (requiredUserType && userType !== requiredUserType) {
+  // Check access based on required user type
+  let hasAccess = true;
+  
+  if (requiredUserType === 'user') {
+    // 'user' means any logged-in user (student, admin, etc. can all make payments)
+    hasAccess = isLoggedIn;
+  } else if (requiredUserType === 'admin') {
+    // Only admins can access
+    hasAccess = userType === 'admin';
+  } else if (requiredUserType === null) {
+    // No restriction - any logged-in user
+    hasAccess = isLoggedIn;
+  }
+  
+  // If user doesn't have access, show access denied
+  if (!hasAccess) {
     return (
       <div className="min-h-screen flex flex-col">
         <Navbar />

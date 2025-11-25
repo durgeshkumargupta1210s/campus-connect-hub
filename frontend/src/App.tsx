@@ -47,8 +47,22 @@ const App = () => (
           <Route path="/create-account" element={<CreateAccountNow />} />
           <Route path="/events" element={<Events />} />
           <Route path="/events/:eventId" element={<EventDetails />} />
-          <Route path="/event/:eventId/checkout" element={<PaymentCheckout />} />
-          <Route path="/event/:eventId/payment-success" element={<PaymentSuccess />} />
+          <Route 
+            path="/event/:eventId/checkout" 
+            element={
+              <ProtectedRoute requiredUserType="user">
+                <PaymentCheckout />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/event/:eventId/payment-success" 
+            element={
+              <ProtectedRoute requiredUserType="user">
+                <PaymentSuccess />
+              </ProtectedRoute>
+            } 
+          />
           <Route path="/hackathons" element={<Events />} />
           <Route path="/hackathons/:eventId" element={<EventDetails />} />
           <Route path="/workshops" element={<Workshops />} />

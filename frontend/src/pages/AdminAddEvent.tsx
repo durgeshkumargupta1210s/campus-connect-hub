@@ -102,10 +102,20 @@ const AddEventPage = () => {
             organizer: "",
             contactEmail: "",
             contactPhone: "",
-            isPaid: false,
-            price: "",
-            paymentDeadline: "",
-            paymentMethods: ["card", "upi", "netbanking"],
+            isPaid: event.isPaid || false,
+            price: event.price?.toString() || "",
+            paymentDeadline: event.paymentDeadline ? new Date(event.paymentDeadline).toISOString().split('T')[0] : "",
+            paymentMethods: event.paymentMethods?.map((m: string) => {
+              // Map backend payment methods to frontend format
+              const mapping: { [key: string]: string } = {
+                'credit_card': 'card',
+                'debit_card': 'card',
+                'upi': 'upi',
+                'net_banking': 'netbanking',
+                'wallet': 'upi'
+              };
+              return mapping[m] || m;
+            }) || ["card", "upi", "netbanking"],
             problemStatements: "",
             judgesCriteria: "",
             company: "",
@@ -229,6 +239,11 @@ const AddEventPage = () => {
       capacity: parseInt(formData.capacity) || 0,
       tags: formData.tags,
       status: "upcoming",
+      // Payment fields
+      isPaid: formData.isPaid || false,
+      price: formData.isPaid ? parseFloat(formData.price) || 0 : 0,
+      paymentMethods: formData.isPaid ? formData.paymentMethods || [] : [],
+      paymentDeadline: formData.isPaid && formData.paymentDeadline ? formData.paymentDeadline : undefined,
       // Omit organizer - backend will set it from createdBy
       // Only include fields that backend schema supports
     };
