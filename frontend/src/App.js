@@ -7,7 +7,9 @@ import { AuthProvider } from "@/context/AuthContext";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import Index from "./pages/Index";
 import Events from "./pages/Events";
-import Workshops from "./pages/Workshops";
+import Workshops from "./pages/Workshops.jsx";
+import BootCamps from "./pages/BootCamps.jsx";
+import GuestLectures from "./pages/GuestLectures.jsx";
 import Placements from "./pages/Placements";
 import Community from "./pages/Community";
 import Resources from "./pages/Resources";
@@ -77,6 +79,18 @@ const App = () => /*#__PURE__*/React.createElement(QueryClientProvider, {
   element: /*#__PURE__*/React.createElement(Workshops, null)
 }), /*#__PURE__*/React.createElement(Route, {
   path: "/workshops/:eventId",
+  element: /*#__PURE__*/React.createElement(EventDetails, null)
+}), /*#__PURE__*/React.createElement(Route, {
+  path: "/bootcamps",
+  element: /*#__PURE__*/React.createElement(BootCamps, null)
+}), /*#__PURE__*/React.createElement(Route, {
+  path: "/bootcamps/:eventId",
+  element: /*#__PURE__*/React.createElement(EventDetails, null)
+}), /*#__PURE__*/React.createElement(Route, {
+  path: "/guest-lectures",
+  element: /*#__PURE__*/React.createElement(GuestLectures, null)
+}), /*#__PURE__*/React.createElement(Route, {
+  path: "/guest-lectures/:eventId",
   element: /*#__PURE__*/React.createElement(EventDetails, null)
 }), /*#__PURE__*/React.createElement(Route, {
   path: "/placements",

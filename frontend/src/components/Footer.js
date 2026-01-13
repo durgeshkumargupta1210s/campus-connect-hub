@@ -194,7 +194,7 @@ const Footer = () => {
     className: "w-4 h-4 text-accent fill-accent"
   }), " for a connected campus"), /*#__PURE__*/React.createElement("p", {
     className: "text-white/60 text-sm"
-  }, "\xA9 2024 CampusConnect. All rights reserved."), /*#__PURE__*/React.createElement("div", {
+  }, "\xA9 2026 CampusConnect. All rights reserved."), /*#__PURE__*/React.createElement("div", {
     className: "flex gap-4 text-white/60 text-xs"
   }, /*#__PURE__*/React.createElement("a", {
     href: "#",

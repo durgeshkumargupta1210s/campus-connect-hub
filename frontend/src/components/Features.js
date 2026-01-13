@@ -2,20 +2,6 @@ import React from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { QrCode, Smartphone, Trophy, Users, BookOpen, Briefcase } from "lucide-react";
 const features = [{
-  icon: /*#__PURE__*/React.createElement(QrCode, {
-    className: "w-8 h-8"
-  }),
-  title: "Instant QR Registration",
-  description: "Register for events in seconds with smart QR code technology. No more long queues!",
-  color: "text-primary"
-}, {
-  icon: /*#__PURE__*/React.createElement(Smartphone, {
-    className: "w-8 h-8"
-  }),
-  title: "Fast Gate Entry",
-  description: "Secure and lightning-fast entry scanning for all campus events and facilities.",
-  color: "text-accent"
-}, {
   icon: /*#__PURE__*/React.createElement(Trophy, {
     className: "w-8 h-8"
   }),
@@ -60,7 +46,7 @@ const Features = () => {
   }, "Everything You Need, One Platform"), /*#__PURE__*/React.createElement("p", {
     className: "text-xl text-muted-foreground max-w-2xl mx-auto"
   }, "No more missing out on opportunities. CampusConnect brings everything to your fingertips.")), /*#__PURE__*/React.createElement("div", {
-    className: "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
+    className: "grid grid-cols-4 gap-8"
   }, features.map((feature, index) => /*#__PURE__*/React.createElement("div", {
     key: index,
     className: "group relative"
