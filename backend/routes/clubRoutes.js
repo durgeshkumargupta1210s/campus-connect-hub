@@ -5,7 +5,7 @@ import { authenticate, authorize } from '../middleware/authMiddleware.js';
 const router = express.Router();
 
 router.get('/', getClubs);
-router.post('/', authenticate, authorize('admin', 'club_head'), createClub);
+router.post('/', authenticate, createClub);
 router.get('/:id', getClubById);
 router.put('/:id', authenticate, authorize('admin', 'club_head'), updateClub);
 router.delete('/:id', authenticate, authorize('admin', 'club_head'), deleteClub);

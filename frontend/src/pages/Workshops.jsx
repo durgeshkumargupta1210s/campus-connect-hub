@@ -136,17 +136,18 @@ const Workshops = () => {
             ) : (
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 {workshops.map((workshop) => (
-                  <button
+                  <Card
                     key={workshop.id}
                     onClick={() => navigate(`/workshops/${workshop.id}`)}
-                    className="group text-left hover:no-underline"
+                    className="group relative bg-white dark:bg-slate-900 border-border hover:shadow-xl transition-all hover:scale-105 h-full flex flex-col cursor-pointer"
                   >
-                    <div className="absolute -inset-0.5 bg-gradient-to-r from-primary/20 to-accent/20 rounded-2xl blur opacity-0 group-hover:opacity-100 transition" />
-                    <Card className="relative bg-white dark:bg-slate-900 border-border hover:shadow-xl transition-all group-hover:scale-105 h-full flex flex-col cursor-pointer">
                       <CardHeader>
                         <div className="flex items-center justify-between mb-4">
                           <Badge className="bg-accent/20 text-accent hover:bg-accent/30">{workshop.status}</Badge>
-                          {workshop.difficulty && <Badge variant="outline">{workshop.difficulty}</Badge>}
+                          <div className="flex gap-2">
+                            {workshop.isPaid && <Badge className="bg-orange-500 text-white">₹{workshop.price}</Badge>}
+                            {!workshop.isPaid && <Badge className="bg-green-500 text-white">FREE</Badge>}
+                          </div>
                         </div>
                         <CardTitle className="text-2xl text-foreground">{workshop.title}</CardTitle>
                         <CardDescription className="text-base mt-2">{workshop.description}</CardDescription>
@@ -205,7 +206,6 @@ const Workshops = () => {
                         </div>
                       </CardContent>
                     </Card>
-                  </button>
                 ))}
               </div>
             )}

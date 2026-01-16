@@ -33,41 +33,24 @@ export const registerEvent = async (req, res) => {
       $push: { registeredEvents: registration._id }
     });
 
-    // Send confirmation email for workshops or if there's a payment
-    const isWorkshop = event.category === 'workshop';
-    
-    // Check if there's a payment for this registration
-    const Payment = (await import('../models/Payment.js')).default;
-    const payment = await Payment.findOne({
-      user: req.user._id,
-      $or: [
-        { relatedTo: 'registration', relatedId: registration._id },
-        { relatedTo: 'ticket', relatedId: event._id }
-      ],
-      status: 'completed'
-    });
+    // Send confirmation email for all events
+    const eventDate = event.date ? new Date(event.date).toLocaleDateString('en-IN', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    }) : 'TBA';
 
-    const isPaidEvent = !!payment;
-    
-    // Send email for workshops or paid events
-    if (isWorkshop || isPaidEvent) {
-      const eventDate = event.date ? new Date(event.date).toLocaleDateString('en-IN', {
-        weekday: 'long',
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric'
-      }) : 'TBA';
-
-      await sendRegistrationConfirmation(
-        user.email,
-        user.name,
-        event.title,
-        eventDate,
-        event.location || 'TBA',
-        isPaidEvent,
-        payment ? payment.amount : 0
-      );
-    }
+    // Always send registration confirmation email
+    await sendRegistrationConfirmation(
+      user.email,
+      user.name,
+      event.title,
+      eventDate,
+      event.location || 'TBA',
+      event.isPaid || false,
+      0
+    );
 
     res.status(201).json({
       message: 'Registered successfully',

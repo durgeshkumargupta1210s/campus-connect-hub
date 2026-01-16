@@ -236,39 +236,67 @@ const EventDetails = () => {
       return;
     }
     try {
-      const result = register({
-        eventId: event.id,
-        eventTitle: event.title,
-        eventCategory: event.category,
-        userName: formData.fullName,
-        userEmail: formData.email,
-        userPhone: formData.phone
+      // Register via backend API
+      const response = await APIClient.post(API_ENDPOINTS.REGISTRATIONS_CREATE, {
+        eventId: event.id
       });
-      if (result.success) {
-        setMessage({
-          type: 'success',
-          text: '✓ Registration successful! Check your email for confirmation.'
-        });
-        setFormData({
-          fullName: '',
-          email: '',
-          phone: ''
-        });
 
-        // Refresh registration count
-        setTimeout(() => {
-          window.location.reload();
-        }, 2000);
+      if (response && response.registration) {
+        // Check if event is paid
+        if (event.isPaid && event.price > 0) {
+          setMessage({
+            type: 'success',
+            text: '✓ Registration successful! Redirecting to payment...'
+          });
+          toast({
+            title: "Proceed to Payment",
+            description: `Please complete payment of ₹${event.price}`,
+            variant: "default"
+          });
+          // Redirect to payment checkout
+          setTimeout(() => {
+            navigate(`/event/${event.id}/checkout`, { 
+              state: { registrationId: response.registration._id }
+            });
+          }, 1500);
+        } else {
+          // Free event
+          setMessage({
+            type: 'success',
+            text: '✓ Registration successful! Check your email for confirmation.'
+          });
+          toast({
+            title: "Success",
+            description: "You have been registered for this event!",
+            variant: "default"
+          });
+          setFormData({
+            fullName: '',
+            email: '',
+            phone: ''
+          });
+          // Redirect to dashboard after a delay
+          setTimeout(() => {
+            navigate('/user');
+          }, 2000);
+        }
       } else {
         setMessage({
           type: 'error',
-          text: result.error || 'Registration failed'
+          text: response?.message || 'Registration failed'
         });
       }
     } catch (err) {
+      console.error('Registration error:', err);
+      const errorMsg = err.message || (err.response?.data?.message || 'Registration failed');
       setMessage({
         type: 'error',
-        text: err instanceof Error ? err.message : 'Registration failed'
+        text: errorMsg
+      });
+      toast({
+        title: "Error",
+        description: errorMsg,
+        variant: "destructive"
       });
     } finally {
       setIsSubmitting(false);

@@ -6,15 +6,15 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/context/AuthContext";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import Index from "./pages/Index";
-import Events from "./pages/Events";
+import Events from "./pages/Events.jsx";
 import Workshops from "./pages/Workshops.jsx";
 import BootCamps from "./pages/BootCamps.jsx";
 import GuestLectures from "./pages/GuestLectures.jsx";
 import Placements from "./pages/Placements";
-import Community from "./pages/Community";
+import Community from "./pages/Community.jsx";
 import Resources from "./pages/Resources";
 import AdminDashboard from "./pages/AdminDashboard";
-import UserDashboard from "./pages/UserDashboard";
+import UserDashboard from "./pages/UserDashboard.jsx";
 import AdminAddEvent from "./pages/AdminAddEvent";
 import AdminAddOpportunity from "./pages/AdminAddOpportunity";
 import EventDetails from "./pages/EventDetails";
@@ -29,6 +29,7 @@ import CreateAccountNow from "./pages/CreateAccountNow";
 import ResumeAnalysis from "./pages/ResumeAnalysis";
 import ClubDetail from "./pages/ClubDetail";
 import JoinClub from "./pages/JoinClub";
+import CreateClub from "./pages/CreateClub.jsx";
 import AdminAddClub from "./pages/AdminAddClub";
 import NotFound from "./pages/NotFound";
 import React from "react";
@@ -107,6 +108,11 @@ const App = () => /*#__PURE__*/React.createElement(QueryClientProvider, {
 }), /*#__PURE__*/React.createElement(Route, {
   path: "/community",
   element: /*#__PURE__*/React.createElement(Community, null)
+}), /*#__PURE__*/React.createElement(Route, {
+  path: "/create-club",
+  element: /*#__PURE__*/React.createElement(ProtectedRoute, {
+    requiredUserType: "user"
+  }, /*#__PURE__*/React.createElement(CreateClub, null))
 }), /*#__PURE__*/React.createElement(Route, {
   path: "/club/:id",
   element: /*#__PURE__*/React.createElement(ClubDetail, null)
