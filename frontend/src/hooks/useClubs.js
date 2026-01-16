@@ -1,27 +1,52 @@
 import { useState, useCallback } from 'react';
-import { clubService } from '@/services/clubService';
+import { APIClient, API_ENDPOINTS } from '@/config/api';
+
 export const useClubs = () => {
   const [clubs, setClubs] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const loadClubs = useCallback(() => {
+
+  const loadClubs = useCallback(async () => {
     try {
-      clubService.initialize();
-      const allClubs = clubService.getAllClubs();
-      setClubs(allClubs);
+      setLoading(true);
+      setError(null);
+      console.log('Fetching clubs from:', API_ENDPOINTS.CLUBS_LIST);
+      const response = await APIClient.get(API_ENDPOINTS.CLUBS_LIST);
+      console.log('Clubs response:', response);
+      // Handle both array and object with clubs property
+      let clubsData = [];
+      if (Array.isArray(response)) {
+        clubsData = response;
+      } else if (response && response.clubs) {
+        clubsData = Array.isArray(response.clubs) ? response.clubs : [];
+      } else if (response && typeof response === 'object') {
+        // If it's an object but not an array, try to extract clubs
+        clubsData = [];
+      }
+      console.log('Processed clubs data:', clubsData);
+      setClubs(clubsData);
     } catch (err) {
       const errorMsg = err instanceof Error ? err.message : 'Failed to load clubs';
       setError(errorMsg);
+      console.error('Load clubs error:', errorMsg, err);
+    } finally {
+      setLoading(false);
     }
   }, []);
-  const getClubById = useCallback(id => {
-    return clubService.getClubById(id);
-  }, []);
-  const addClub = useCallback(clubData => {
+
+  const getClubById = useCallback((id) => {
+    return clubs.find(club => club._id === id || club.id === id);
+  }, [clubs]);
+
+  const addClub = useCallback((clubData) => {
     try {
       setError(null);
       setLoading(true);
-      const newClub = clubService.addClub(clubData);
+      // Add club to local state immediately
+      const newClub = {
+        ...clubData,
+        _id: `temp_${Date.now()}`
+      };
       setClubs(prev => [...prev, newClub]);
       return {
         success: true,
@@ -38,15 +63,17 @@ export const useClubs = () => {
       setLoading(false);
     }
   }, []);
+
   const updateClub = useCallback((id, updates) => {
     try {
       setError(null);
-      const updated = clubService.updateClub(id, updates);
+      const updated = clubs.find(club => club._id === id || club.id === id);
       if (updated) {
-        setClubs(prev => prev.map(club => club.id === id ? updated : club));
+        const newClub = { ...updated, ...updates };
+        setClubs(prev => prev.map(club => (club._id === id || club.id === id) ? newClub : club));
         return {
           success: true,
-          club: updated
+          club: newClub
         };
       }
       return {
@@ -61,13 +88,14 @@ export const useClubs = () => {
         error: errorMsg
       };
     }
-  }, []);
-  const deleteClub = useCallback(id => {
+  }, [clubs]);
+
+  const deleteClub = useCallback((id) => {
     try {
       setError(null);
-      const deleted = clubService.deleteClub(id);
-      if (deleted) {
-        setClubs(prev => prev.filter(club => club.id !== id));
+      const filtered = clubs.filter(club => club._id !== id && club.id !== id);
+      if (filtered.length < clubs.length) {
+        setClubs(filtered);
         return {
           success: true
         };
@@ -84,7 +112,8 @@ export const useClubs = () => {
         error: errorMsg
       };
     }
-  }, []);
+  }, [clubs]);
+
   return {
     clubs,
     loading,

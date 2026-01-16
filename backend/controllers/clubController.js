@@ -5,6 +5,13 @@ export const createClub = async (req, res) => {
   try {
     const { name, description, category, imageUrl, email, phone, location, website, socialLinks } = req.body;
 
+    // Validate required fields
+    if (!name || !description || !email) {
+      return res.status(400).json({ 
+        message: 'Name, description, and email are required' 
+      });
+    }
+
     const club = await Club.create({
       name,
       description,
@@ -23,7 +30,16 @@ export const createClub = async (req, res) => {
       club
     });
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    console.error('Club creation error:', err);
+    // Handle duplicate name error
+    if (err.code === 11000) {
+      return res.status(400).json({ 
+        message: 'A club with this name already exists. Please choose a different name.' 
+      });
+    }
+    res.status(500).json({ 
+      message: err.message || 'Error creating club' 
+    });
   }
 };
 
