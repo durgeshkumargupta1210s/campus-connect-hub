@@ -58,7 +58,7 @@ export default function ClubDetail() {
   }, /*#__PURE__*/React.createElement(ArrowLeft, {
     className: "w-4 h-4"
   }), "Back to Communities"))), /*#__PURE__*/React.createElement("section", {
-    className: `${club.color} text-white py-16`
+    className: "bg-gradient-to-r from-blue-600 to-purple-600 text-white py-16"
   }, /*#__PURE__*/React.createElement("div", {
     className: "container mx-auto px-4"
   }, /*#__PURE__*/React.createElement("div", {
@@ -71,20 +71,13 @@ export default function ClubDetail() {
     className: "bg-white/20 text-white text-lg px-4 py-2"
   }, /*#__PURE__*/React.createElement(Users, {
     className: "w-4 h-4 mr-2 inline"
-  }), club.members, "+ Members"), /*#__PURE__*/React.createElement(Badge, {
-    className: "bg-white/20 text-white text-lg px-4 py-2"
-  }, /*#__PURE__*/React.createElement(Calendar, {
-    className: "w-4 h-4 mr-2 inline"
-  }), "Est. ", club.establishedYear)))), /*#__PURE__*/React.createElement("div", {
+  }), club.memberCount || 0, " Members"), /*#__PURE__*/React.createElement(Badge, {
+    className: "bg-white/20 text-white text-lg px-4 py-2 capitalize"
+  }, club.category || "General")))), /*#__PURE__*/React.createElement("div", {
     className: "max-w-3xl"
   }, /*#__PURE__*/React.createElement("p", {
     className: "text-lg text-white/90 mb-6"
-  }, club.about), /*#__PURE__*/React.createElement("div", {
-    className: "flex flex-wrap gap-2"
-  }, club.tags.map((tag, idx) => /*#__PURE__*/React.createElement(Badge, {
-    key: idx,
-    className: "bg-white/30 text-white text-sm"
-  }, tag)))))), /*#__PURE__*/React.createElement("section", {
+  }, club.description || "No description available")))), /*#__PURE__*/React.createElement("section", {
     className: "py-12 px-4 bg-background"
   }, /*#__PURE__*/React.createElement("div", {
     className: "container mx-auto"
@@ -98,134 +91,44 @@ export default function ClubDetail() {
     className: "text-2xl flex items-center gap-2"
   }, /*#__PURE__*/React.createElement(User, {
     className: "w-5 h-5 text-primary"
-  }), "Leadership")), /*#__PURE__*/React.createElement(CardContent, {
+  }), "Contact Information")), /*#__PURE__*/React.createElement(CardContent, {
     className: "space-y-6"
   }, /*#__PURE__*/React.createElement("div", {
-    className: "p-4 bg-gradient-to-r from-primary/10 to-primary/5 rounded-lg border border-primary/20"
-  }, /*#__PURE__*/React.createElement("p", {
-    className: "text-sm text-slate-600 font-semibold mb-2"
-  }, "PRESIDENT"), /*#__PURE__*/React.createElement("h3", {
-    className: "text-xl font-bold text-slate-900 mb-1"
-  }, club.president.name), club.president.bio && /*#__PURE__*/React.createElement("p", {
-    className: "text-sm text-slate-600 mb-3"
-  }, club.president.bio), /*#__PURE__*/React.createElement("div", {
-    className: "space-y-2"
-  }, club.president.email && /*#__PURE__*/React.createElement("div", {
-    className: "flex items-center gap-3 text-sm text-slate-700"
-  }, /*#__PURE__*/React.createElement(Mail, {
-    className: "w-4 h-4 text-primary"
-  }), /*#__PURE__*/React.createElement("a", {
-    href: `mailto:${club.president.email}`,
-    className: "hover:text-primary"
-  }, club.president.email)), club.president.phone && /*#__PURE__*/React.createElement("div", {
-    className: "flex items-center gap-3 text-sm text-slate-700"
-  }, /*#__PURE__*/React.createElement(Phone, {
-    className: "w-4 h-4 text-primary"
-  }), /*#__PURE__*/React.createElement("a", {
-    href: `tel:${club.president.phone}`
-  }, club.president.phone)))), club.vicePresident && /*#__PURE__*/React.createElement("div", {
-    className: "p-4 bg-gradient-to-r from-accent/10 to-accent/5 rounded-lg border border-accent/20"
-  }, /*#__PURE__*/React.createElement("p", {
-    className: "text-sm text-slate-600 font-semibold mb-2"
-  }, "VICE PRESIDENT"), /*#__PURE__*/React.createElement("h3", {
-    className: "text-xl font-bold text-slate-900 mb-1"
-  }, club.vicePresident.name), club.vicePresident.bio && /*#__PURE__*/React.createElement("p", {
-    className: "text-sm text-slate-600 mb-3"
-  }, club.vicePresident.bio), club.vicePresident.email && /*#__PURE__*/React.createElement("div", {
-    className: "flex items-center gap-3 text-sm text-slate-700"
-  }, /*#__PURE__*/React.createElement(Mail, {
-    className: "w-4 h-4 text-accent"
-  }), /*#__PURE__*/React.createElement("a", {
-    href: `mailto:${club.vicePresident.email}`,
-    className: "hover:text-accent"
-  }, club.vicePresident.email))), club.teamMembers.length > 0 && /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("h4", {
-    className: "font-bold text-slate-900 mb-4"
-  }, "Core Team Members"), /*#__PURE__*/React.createElement("div", {
-    className: "grid grid-cols-1 md:grid-cols-2 gap-3"
-  }, club.teamMembers.map((member, idx) => /*#__PURE__*/React.createElement("div", {
-    key: idx,
-    className: "p-3 bg-slate-50 rounded-lg border border-slate-200"
-  }, /*#__PURE__*/React.createElement("p", {
-    className: "font-semibold text-slate-900"
-  }, member.name), /*#__PURE__*/React.createElement("p", {
-    className: "text-sm text-slate-600"
-  }, member.role), member.email && /*#__PURE__*/React.createElement("p", {
-    className: "text-xs text-primary mt-1"
-  }, member.email))))))), /*#__PURE__*/React.createElement(Card, {
-    className: "bg-white dark:bg-slate-900 border-slate-200"
-  }, /*#__PURE__*/React.createElement(CardHeader, null, /*#__PURE__*/React.createElement(CardTitle, {
-    className: "text-2xl flex items-center gap-2"
-  }, /*#__PURE__*/React.createElement(Trophy, {
-    className: "w-5 h-5 text-yellow-600"
-  }), "Achievements & Milestones")), /*#__PURE__*/React.createElement(CardContent, null, /*#__PURE__*/React.createElement("ul", {
-    className: "space-y-3"
-  }, club.achievements.map((achievement, idx) => /*#__PURE__*/React.createElement("li", {
-    key: idx,
-    className: "flex items-start gap-3"
-  }, /*#__PURE__*/React.createElement("span", {
-    className: "text-yellow-600 font-bold mt-1"
-  }, "\u2605"), /*#__PURE__*/React.createElement("span", {
-    className: "text-slate-700"
-  }, achievement)))))), /*#__PURE__*/React.createElement(Card, {
-    className: "bg-white dark:bg-slate-900 border-slate-200"
-  }, /*#__PURE__*/React.createElement(CardHeader, null, /*#__PURE__*/React.createElement(CardTitle, {
-    className: "text-2xl flex items-center gap-2"
-  }, /*#__PURE__*/React.createElement(Calendar, {
-    className: "w-5 h-5 text-blue-600"
-  }), "Regular Events & Activities")), /*#__PURE__*/React.createElement(CardContent, null, /*#__PURE__*/React.createElement("ul", {
-    className: "space-y-3"
-  }, club.events.map((event, idx) => /*#__PURE__*/React.createElement("li", {
-    key: idx,
-    className: "flex items-start gap-3"
-  }, /*#__PURE__*/React.createElement("span", {
-    className: "text-blue-600 font-bold mt-1"
-  }, "\u2713"), /*#__PURE__*/React.createElement("span", {
-    className: "text-slate-700"
-  }, event)))))), club.gallery.length > 0 && /*#__PURE__*/React.createElement(Card, {
-    className: "bg-white dark:bg-slate-900 border-slate-200"
-  }, /*#__PURE__*/React.createElement(CardHeader, null, /*#__PURE__*/React.createElement(CardTitle, {
-    className: "text-2xl flex items-center gap-2"
-  }, /*#__PURE__*/React.createElement(ImageIcon, {
-    className: "w-5 h-5 text-purple-600"
-  }), "Gallery")), /*#__PURE__*/React.createElement(CardContent, null, /*#__PURE__*/React.createElement("div", {
-    className: "grid grid-cols-2 md:grid-cols-4 gap-4"
-  }, club.gallery.map((image, idx) => /*#__PURE__*/React.createElement("div", {
-    key: idx,
-    className: "aspect-square rounded-lg overflow-hidden bg-slate-200 hover:scale-105 transition-transform cursor-pointer"
-  }, /*#__PURE__*/React.createElement("img", {
-    src: image,
-    alt: `${club.name} gallery ${idx + 1}`,
-    className: "w-full h-full object-cover"
-  }))))))), /*#__PURE__*/React.createElement("div", {
-    className: "space-y-6"
-  }, /*#__PURE__*/React.createElement(Card, {
-    className: "bg-gradient-to-br from-primary/10 to-primary/5 border-primary/20"
-  }, /*#__PURE__*/React.createElement(CardHeader, null, /*#__PURE__*/React.createElement(CardTitle, {
-    className: "text-lg"
-  }, "Get In Touch")), /*#__PURE__*/React.createElement(CardContent, {
     className: "space-y-4"
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "flex items-center gap-3"
+  }, club.email && /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center gap-3 text-sm text-slate-700"
   }, /*#__PURE__*/React.createElement(Mail, {
-    className: "w-5 h-5 text-primary flex-shrink-0"
+    className: "w-4 h-4 text-primary"
   }), /*#__PURE__*/React.createElement("a", {
-    href: `mailto:${club.contactEmail}`,
-    className: "text-sm text-primary hover:underline break-all"
-  }, club.contactEmail)), club.contactPhone && /*#__PURE__*/React.createElement("div", {
-    className: "flex items-center gap-3"
+    href: `mailto:${club.email}`,
+    className: "hover:text-primary"
+  }, club.email)), club.phone && /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center gap-3 text-sm text-slate-700"
   }, /*#__PURE__*/React.createElement(Phone, {
-    className: "w-5 h-5 text-primary flex-shrink-0"
+    className: "w-4 h-4 text-primary"
   }), /*#__PURE__*/React.createElement("a", {
-    href: `tel:${club.contactPhone}`,
-    className: "text-sm hover:text-primary"
-  }, club.contactPhone)))), club.social && Object.keys(club.social).length > 0 && /*#__PURE__*/React.createElement(Card, {
+    href: `tel:${club.phone}`
+  }, club.phone)), club.location && /*#__PURE__*/React.createElement("div", {
+    className: "text-sm text-slate-700"
+  }, /*#__PURE__*/React.createElement("strong", null, "Location:"), " ", club.location), club.website && /*#__PURE__*/React.createElement("div", {
+    className: "text-sm"
+  }, /*#__PURE__*/React.createElement("a", {
+    href: club.website,
+    target: "_blank",
+    rel: "noopener noreferrer",
+    className: "text-primary hover:underline"
+  }, "Visit Website"))))), club.socialLinks && (club.socialLinks.instagram || club.socialLinks.linkedin || club.socialLinks.twitter || club.socialLinks.facebook) && /*#__PURE__*/React.createElement(Card, {
+    target: "_blank",
+    rel: "noopener noreferrer",
+    className: "text-primary hover:underline"
+  }, "Visit Website"))))), club.socialLinks && (club.socialLinks.instagram || club.socialLinks.linkedin || club.socialLinks.twitter || club.socialLinks.facebook) && /*#__PURE__*/React.createElement(Card, {
     className: "bg-white dark:bg-slate-900 border-slate-200"
   }, /*#__PURE__*/React.createElement(CardHeader, null, /*#__PURE__*/React.createElement(CardTitle, {
-    className: "text-lg"
-  }, "Follow Us")), /*#__PURE__*/React.createElement(CardContent, {
+    className: "text-2xl flex items-center gap-2"
+  }, "Social Media")), /*#__PURE__*/React.createElement(CardContent, {
     className: "space-y-3"
-  }, club.social.instagram && /*#__PURE__*/React.createElement("a", {
-    href: club.social.instagram,
+  }, club.socialLinks.instagram && /*#__PURE__*/React.createElement("a", {
+    href: club.socialLinks.instagram,
     target: "_blank",
     rel: "noopener noreferrer",
     className: "flex items-center gap-3 p-3 rounded-lg bg-slate-50 hover:bg-slate-100 transition-all"
@@ -233,8 +136,8 @@ export default function ClubDetail() {
     className: "w-5 h-5 text-pink-600"
   }), /*#__PURE__*/React.createElement("span", {
     className: "text-sm font-medium text-slate-700"
-  }, "Instagram")), club.social.linkedin && /*#__PURE__*/React.createElement("a", {
-    href: club.social.linkedin,
+  }, "Instagram")), club.socialLinks.linkedin && /*#__PURE__*/React.createElement("a", {
+    href: club.socialLinks.linkedin,
     target: "_blank",
     rel: "noopener noreferrer",
     className: "flex items-center gap-3 p-3 rounded-lg bg-slate-50 hover:bg-slate-100 transition-all"
@@ -242,19 +145,42 @@ export default function ClubDetail() {
     className: "w-5 h-5 text-blue-700"
   }), /*#__PURE__*/React.createElement("span", {
     className: "text-sm font-medium text-slate-700"
-  }, "LinkedIn")), club.social.discord && /*#__PURE__*/React.createElement("a", {
-    href: club.social.discord,
+  }, "LinkedIn")), club.socialLinks.twitter && /*#__PURE__*/React.createElement("a", {
+    href: club.socialLinks.twitter,
     target: "_blank",
     rel: "noopener noreferrer",
     className: "flex items-center gap-3 p-3 rounded-lg bg-slate-50 hover:bg-slate-100 transition-all"
   }, /*#__PURE__*/React.createElement(MessageCircle, {
-    className: "w-5 h-5 text-indigo-600"
+    className: "w-5 h-5 text-blue-500"
   }), /*#__PURE__*/React.createElement("span", {
     className: "text-sm font-medium text-slate-700"
-  }, "Discord")))), /*#__PURE__*/React.createElement(Button, {
-    onClick: () => navigate(`/club/${id}/join`),
-    className: "w-full bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-white py-6 text-lg font-semibold"
-  }, "Join ", club.name), /*#__PURE__*/React.createElement(Card, {
+  }, "Twitter")), club.socialLinks.facebook && /*#__PURE__*/React.createElement("a", {
+    href: club.socialLinks.facebook,
+    className: "text-sm font-medium text-slate-700"
+  }, "Twitter")), club.socialLinks.facebook && /*#__PURE__*/React.createElement("a", {
+    href: club.socialLinks.facebook,
+    target: "_blank",
+    rel: "noopener noreferrer",
+    className: "flex items-center gap-3 p-3 rounded-lg bg-slate-50 hover:bg-slate-100 transition-all"
+  }, /*#__PURE__*/React.createElement(MessageCircle, {
+    className: "w-5 h-5 text-blue-600"
+  }), /*#__PURE__*/React.createElement("span", {
+    className: "text-sm font-medium text-slate-700"
+  }, "Facebook"))))), /*#__PURE__*/React.createElement("div", {
+    className: "space-y-6"
+  }, /*#__PURE__*/React.createElement(Card, {
+    className: "bg-gradient-to-br from-primary/10 to-primary/5 border-primary/20"
+  }, /*#__PURE__*/React.createElement(CardHeader, null, /*#__PURE__*/React.createElement(CardTitle, {
+    className: "text-lg"
+  }, "Club Status")), /*#__PURE__*/React.createElement(CardContent, {
+    className: "space-y-4"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "text-center"
+  }, /*#__PURE__*/React.createElement(Badge, {
+    className: `text-lg px-4 py-2 ${club.status === 'active' ? 'bg-green-500' : club.status === 'inactive' ? 'bg-gray-500' : 'bg-red-500'}`
+  }, club.status?.toUpperCase() || 'ACTIVE')))), /*#__PURE__*/React.createElement(Card, {
+    className: `text-lg px-4 py-2 ${club.status === 'active' ? 'bg-green-500' : club.status === 'inactive' ? 'bg-gray-500' : 'bg-red-500'}`
+  }, club.status?.toUpperCase() || 'ACTIVE')))), /*#__PURE__*/React.createElement(Card, {
     className: "bg-white dark:bg-slate-900 border-slate-200"
   }, /*#__PURE__*/React.createElement(CardContent, {
     className: "pt-6"
@@ -264,19 +190,13 @@ export default function ClubDetail() {
     className: "text-center pb-4 border-b border-slate-200"
   }, /*#__PURE__*/React.createElement("p", {
     className: "text-3xl font-bold text-primary"
-  }, club.members, "+"), /*#__PURE__*/React.createElement("p", {
+  }, club.memberCount || 0), /*#__PURE__*/React.createElement("p", {
     className: "text-sm text-slate-600"
-  }, "Active Members")), /*#__PURE__*/React.createElement("div", {
-    className: "text-center pb-4 border-b border-slate-200"
-  }, /*#__PURE__*/React.createElement("p", {
-    className: "text-3xl font-bold text-accent"
-  }, club.events.length), /*#__PURE__*/React.createElement("p", {
-    className: "text-sm text-slate-600"
-  }, "Annual Events")), /*#__PURE__*/React.createElement("div", {
+  }, "Members")), /*#__PURE__*/React.createElement("div", {
     className: "text-center"
   }, /*#__PURE__*/React.createElement("p", {
-    className: "text-3xl font-bold text-yellow-600"
-  }, club.achievements.length), /*#__PURE__*/React.createElement("p", {
+    className: "text-3xl font-bold text-accent capitalize"
+  }, club.category || "General"), /*#__PURE__*/React.createElement("p", {
     className: "text-sm text-slate-600"
-  }, "Major Achievements")))))))))), /*#__PURE__*/React.createElement(Footer, null));
+  }, "Category")))))))))), /*#__PURE__*/React.createElement(Footer, null));
 }

@@ -1,5 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { APIClient, API_ENDPOINTS } from '@/config/api';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { Button } from '@/components/ui/button';
@@ -7,7 +8,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { useClubs } from '@/hooks/useClubs';
-import { useClubApplications } from '@/hooks/useClubApplications';
 import { ArrowLeft, Upload, CheckCircle } from 'lucide-react';
 import React from "react";
 export default function JoinClub() {
@@ -20,12 +20,10 @@ export default function JoinClub() {
     loadClubs,
     clubs
   } = useClubs();
-  const {
-    addApplication
-  } = useClubApplications();
   const [club, setClub] = useState(null);
   const [submitted, setSubmitted] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const isSubmittingRef = useRef(false);
   const [formData, setFormData] = useState({
     fullName: '',
     email: '',
@@ -72,43 +70,38 @@ export default function JoinClub() {
   const handleSubmit = async e => {
     e.preventDefault();
     if (!club) return;
+    
+    // Prevent duplicate submissions
+    if (isLoading || isSubmittingRef.current) {
+      console.log('Already submitting, ignoring');
+      return;
+    }
+    
+    isSubmittingRef.current = true;
     setIsLoading(true);
+    
     try {
-      // Convert file to base64
-      let resumeBase64 = '';
-      if (formData.resume) {
-        const reader = new FileReader();
-        reader.readAsDataURL(formData.resume);
-        await new Promise(resolve => {
-          reader.onload = () => {
-            resumeBase64 = reader.result;
-            resolve(null);
-          };
-        });
-      }
-      const application = {
-        clubId: club.id,
-        clubName: club.name,
-        userId: `user-${Date.now()}`,
-        fullName: formData.fullName,
-        email: formData.email,
-        phone: formData.phone,
-        universityRollNumber: formData.universityRollNumber,
-        year: formData.year,
-        teamInterest: formData.teamInterest,
-        resume: resumeBase64 || '',
-        status: 'pending'
-      };
-      const result = addApplication(application);
-      if (result.success) {
+      // Call the backend API to join the club
+      const response = await APIClient.post(API_ENDPOINTS.CLUBS_JOIN(club._id || club.id));
+      console.log('Join club successful:', response);
+      
+      setSubmitted(true);
+      setTimeout(() => {
+        navigate('/community');
+      }, 3000);
+    } catch (error) {
+      console.error('Error joining club:', error);
+      isSubmittingRef.current = false; // Reset only on error
+      
+      if (error.message && error.message.includes('Already a member')) {
+        alert('You are already a member of this club.');
         setSubmitted(true);
         setTimeout(() => {
           navigate('/community');
-        }, 3000);
+        }, 2000);
+      } else {
+        alert(error.message || 'Error joining club. Please try again.');
       }
-    } catch (error) {
-      console.error('Error submitting application:', error);
-      alert('Error submitting application. Please try again.');
     } finally {
       setIsLoading(false);
     }

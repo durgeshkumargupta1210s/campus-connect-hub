@@ -1,5 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { useUser } from '@clerk/clerk-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -7,6 +8,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Input } from '@/components/ui/input';
 import { useOpportunities } from '@/hooks/useOpportunities';
 import { useResumeAnalysis } from '@/hooks/useResumeAnalysis';
+import { APIClient, API_ENDPOINTS } from '@/config/api';
 import { MapPin, Calendar, DollarSign, ExternalLink, ArrowLeft, Mail, Phone, Users, CheckCircle2, AlertCircle, Upload, FileText, CheckCircle } from 'lucide-react';
 import React from "react";
 export default function OpportunityDetail() {
@@ -14,20 +16,90 @@ export default function OpportunityDetail() {
     id
   } = useParams();
   const navigate = useNavigate();
+  const { user } = useUser();
+  const userId = user?.id;
   const {
     opportunities,
     loadOpportunities
   } = useOpportunities();
   const [opportunity, setOpportunity] = useState(null);
+  const [loading, setLoading] = useState(true);
+  
+  // Function to fetch opportunity directly from API
+  const fetchOpportunityFromAPI = async (opportunityId) => {
+    try {
+      const response = await fetch(`/api/opportunities/${opportunityId}`);
+      if (response.ok) {
+        const data = await response.json();
+        console.log('Fetched opportunity from API:', data);
+        setOpportunity(data);
+        return data;
+      }
+    } catch (err) {
+      console.error('Failed to fetch opportunity:', err);
+    }
+    return null;
+  };
+  
   useEffect(() => {
     loadOpportunities();
   }, [loadOpportunities]);
+  
   useEffect(() => {
-    if (id && opportunities.length > 0) {
-      const found = opportunities.find(o => o.id === id);
-      setOpportunity(found || null);
-    }
+    const fetchOpportunity = async () => {
+      if (!id) {
+        setLoading(false);
+        return;
+      }
+      
+      setLoading(true);
+      console.log('Fetching opportunity with ID:', id);
+      
+      // First try to find in cached opportunities
+      if (opportunities.length > 0) {
+        const found = opportunities.find(o => (o._id || o.id) === id);
+        if (found) {
+          console.log('Found in cache:', found);
+          setOpportunity(found);
+          setLoading(false);
+          return;
+        }
+      }
+      
+      // If not found in cache, fetch directly from API
+      try {
+        console.log('Fetching from API...');
+        const response = await fetch(`/api/opportunities/${id}`);
+        console.log('Response status:', response.status);
+        if (response.ok) {
+          const data = await response.json();
+          console.log('Fetched opportunity:', data);
+          setOpportunity(data);
+        } else {
+          console.log('Response not OK');
+          setOpportunity(null);
+        }
+      } catch (err) {
+        console.error('Failed to fetch opportunity:', err);
+        setOpportunity(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchOpportunity();
   }, [id, opportunities]);
+  if (loading) {
+    return /*#__PURE__*/React.createElement("div", {
+      className: "min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-4 md:p-8 flex items-center justify-center"
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "text-center"
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"
+    }), /*#__PURE__*/React.createElement("p", {
+      className: "mt-4 text-slate-600"
+    }, "Loading opportunity...")));
+  }
   if (!opportunity) {
     return /*#__PURE__*/React.createElement("div", {
       className: "min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-4 md:p-8 flex items-center justify-center"
@@ -178,7 +250,8 @@ export default function OpportunityDetail() {
   }))), /*#__PURE__*/React.createElement("p", {
     className: "text-sm text-slate-600 text-center"
   }, "You will be redirected to the company's application portal"))), /*#__PURE__*/React.createElement(ResumeEligibilityCard, {
-    opportunity: opportunity
+    opportunity: opportunity,
+    userId: userId
   }), /*#__PURE__*/React.createElement(Card, null, /*#__PURE__*/React.createElement(CardHeader, null, /*#__PURE__*/React.createElement(CardTitle, null, "Contact Information")), /*#__PURE__*/React.createElement(CardContent, {
     className: "space-y-4"
   }, opportunity.contactEmail && /*#__PURE__*/React.createElement("a", {
@@ -212,10 +285,14 @@ export default function OpportunityDetail() {
 
 // Resume Eligibility Card Component
 const ResumeEligibilityCard = ({
-  opportunity
+  opportunity,
+  userId
 }) => {
   const [showUpload, setShowUpload] = useState(false);
   const [selectedFile, setSelectedFile] = useState(null);
+  const [applied, setApplied] = useState(false);
+  const [applying, setApplying] = useState(false);
+  const isApplyingRef = useRef(false); // Use ref to prevent race conditions
   const {
     analyzeResume,
     analyzing,
@@ -226,6 +303,21 @@ const ResumeEligibilityCard = ({
     loadingSuggestions
   } = useResumeAnalysis();
   const [activeTab, setActiveTab] = useState('overview');
+
+  // Check if user has already applied on component mount
+  useEffect(() => {
+    if (userId && opportunity?.applications) {
+      const hasApplied = opportunity.applications.some(
+        app => {
+          // app.userId is populated with { _id, clerkId }
+          const appUserId = app.userId?.clerkId || app.userId;
+          return appUserId === userId;
+        }
+      );
+      console.log('Checking if applied:', { userId, applications: opportunity.applications, hasApplied });
+      setApplied(hasApplied);
+    }
+  }, [userId, opportunity]);
   const handleFileSelect = async e => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -371,7 +463,56 @@ const ResumeEligibilityCard = ({
     className: "text-xs text-slate-600"
   }, "Your CGPA"), /*#__PURE__*/React.createElement("p", {
     className: `text-lg font-bold ${result.userCGPA >= result.requiredCGPA ? 'text-green-600' : 'text-red-600'}`
-  }, result.userCGPA))))), /*#__PURE__*/React.createElement(Button, {
+  }, result.userCGPA))))), result.isEligible && /*#__PURE__*/React.createElement("div", {
+    className: "mt-4 pt-4 border-t border-slate-200"
+  }, opportunity.applyLink ? /*#__PURE__*/React.createElement("a", {
+    href: opportunity.applyLink,
+    target: "_blank",
+    rel: "noopener noreferrer",
+    className: "block"
+  }, /*#__PURE__*/React.createElement(Button, {
+    className: "w-full bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white mb-2"
+  }, "Apply Now ", /*#__PURE__*/React.createElement(ExternalLink, {
+    className: "w-4 h-4 ml-2 inline"
+  }))) : /*#__PURE__*/React.createElement(Button, {
+    onClick: async () => {
+      // Prevent multiple clicks using ref
+      if (applied || applying || isApplyingRef.current) {
+        console.log('Already applied or applying, ignoring click');
+        return;
+      }
+      
+      // Set ref immediately to block any other clicks
+      isApplyingRef.current = true;
+      setApplying(true);
+      setApplied(true); // Set immediately to prevent double-clicks
+      
+      try {
+        const response = await APIClient.post(API_ENDPOINTS.OPPORTUNITIES_APPLY(opportunity._id || opportunity.id));
+        console.log('Application successful:', response);
+        // Refetch the opportunity to get updated applications with populated clerkId
+        await fetchOpportunityFromAPI(opportunity._id || opportunity.id);
+      } catch (err) {
+        console.error('Application error:', err);
+        // If API fails, revert the applied state
+        setApplied(false);
+        isApplyingRef.current = false;
+        // Check if error is "Already applied"
+        if (err.message && err.message.includes('Already applied')) {
+          alert('You have already applied to this opportunity.');
+          setApplied(true); // Keep it as applied
+          isApplyingRef.current = true;
+          await fetchOpportunityFromAPI(opportunity._id || opportunity.id);
+        } else {
+          alert(err.message || 'Failed to submit application. Please try again.');
+        }
+      } finally {
+        setApplying(false);
+      }
+    },
+    disabled: applied || applying,
+    className: `w-full mb-2 ${applied ? 'bg-gray-400 cursor-not-allowed' : 'bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700'} text-white`
+  }, applied ? "✓ Applied" : applying ? "Applying..." : "Apply Now")), /*#__PURE__*/React.createElement(Button, {
     onClick: resetAnalysis,
     variant: "outline",
     className: "w-full"
@@ -442,9 +583,33 @@ const ResumeEligibilityCard = ({
     className: "p-2 bg-blue-50 text-blue-700 text-xs rounded hover:bg-blue-100 transition"
   }, "GeeksforGeeks"))), /*#__PURE__*/React.createElement("div", {
     className: "space-y-2 pt-4"
-  }, result.isEligible && /*#__PURE__*/React.createElement(Button, {
+  }, result.isEligible ? /*#__PURE__*/React.createElement(React.Fragment, null, opportunity.applyLink ? /*#__PURE__*/React.createElement("a", {
+    href: opportunity.applyLink,
+    target: "_blank",
+    rel: "noopener noreferrer",
+    className: "block"
+  }, /*#__PURE__*/React.createElement(Button, {
+    className: "w-full bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white"
+  }, "Apply Now ", /*#__PURE__*/React.createElement(ExternalLink, {
+    className: "w-4 h-4 ml-2 inline"
+  }))) : /*#__PURE__*/React.createElement(Button, {
+    onClick: async () => {
+      try {
+        await fetch(`/api/opportunities/${opportunity._id || opportunity.id}/apply`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' }
+        });
+        alert('Application submitted successfully!');
+      } catch (err) {
+        alert('Failed to submit application. Please try again.');
+      }
+    },
     className: "w-full bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white"
   }, "Apply Now"), /*#__PURE__*/React.createElement(Button, {
+    onClick: resetAnalysis,
+    variant: "outline",
+    className: "w-full mt-2"
+  }, "Check Another Resume")) : /*#__PURE__*/React.createElement(Button, {
     onClick: resetAnalysis,
     variant: "outline",
     className: "w-full"

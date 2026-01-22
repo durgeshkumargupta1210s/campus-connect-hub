@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Plus, LogOut, Menu, X, BarChart3, Calendar, Users, Zap, LayoutDashboard, Edit2, Trash2, Eye, Briefcase, Users2, DollarSign, CreditCard, AlertCircle } from "lucide-react";
+import { Plus, Menu, X, BarChart3, Calendar, Users, Zap, LayoutDashboard, Edit2, Trash2, Eye, Briefcase, Users2, DollarSign, CreditCard, AlertCircle } from "lucide-react";
 import React from "react";
 // Removed localStorage services - using backend API directly
 import { useOpportunities } from "@/hooks/useOpportunities";
@@ -13,10 +13,15 @@ import { usePayments } from "@/hooks/usePayments";
 import { APIClient, API_ENDPOINTS } from "@/config/api";
 import { useToast } from "@/hooks/use-toast";
 import { useEvents } from "@/hooks/useEvents";
+import { useClerk, useUser, UserButton } from "@clerk/clerk-react";
+
 const AdminDashboard = () => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [activeTab, setActiveTab] = useState("overview");
   const navigate = useNavigate();
+  const { signOut } = useClerk();
+  const { user } = useUser();
+  
   const menuItems = [{
     id: "overview",
     label: "Overview",
@@ -50,9 +55,7 @@ const AdminDashboard = () => {
     label: "Analytics",
     icon: BarChart3
   }];
-  const handleLogout = () => {
-    navigate("/");
-  };
+  
   return /*#__PURE__*/React.createElement("div", {
     className: "flex h-screen bg-background overflow-hidden"
   }, /*#__PURE__*/React.createElement("aside", {
@@ -78,16 +81,7 @@ const AdminDashboard = () => {
     }), sidebarOpen && /*#__PURE__*/React.createElement("span", {
       className: "text-sm font-medium"
     }, item.label));
-  })), /*#__PURE__*/React.createElement("div", {
-    className: "p-4 border-t border-white/10"
-  }, /*#__PURE__*/React.createElement("button", {
-    onClick: handleLogout,
-    className: "w-full flex items-center gap-3 px-4 py-3 rounded-lg bg-white/10 text-white hover:bg-white/20 transition-all"
-  }, /*#__PURE__*/React.createElement(LogOut, {
-    className: "w-5 h-5 flex-shrink-0"
-  }), sidebarOpen && /*#__PURE__*/React.createElement("span", {
-    className: "text-sm font-medium"
-  }, "Logout")))), /*#__PURE__*/React.createElement("div", {
+  }))), /*#__PURE__*/React.createElement("div", {
     className: "flex-1 flex flex-col overflow-hidden"
   }, /*#__PURE__*/React.createElement("header", {
     className: "bg-white dark:bg-slate-900 border-b border-border shadow-sm"
@@ -102,7 +96,9 @@ const AdminDashboard = () => {
     className: "w-6 h-6"
   })), /*#__PURE__*/React.createElement("h1", {
     className: "text-2xl font-bold text-foreground"
-  }, menuItems.find(m => m.id === activeTab)?.label || "Dashboard"), activeTab === "events" && /*#__PURE__*/React.createElement(Button, {
+  }, menuItems.find(m => m.id === activeTab)?.label || "Dashboard"), /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center gap-4"
+  }, activeTab === "events" && /*#__PURE__*/React.createElement(Button, {
     onClick: () => navigate("/admin/add-event"),
     className: "bg-gradient-accent hover:opacity-90 text-white flex items-center gap-2"
   }, /*#__PURE__*/React.createElement(Plus, {
@@ -117,7 +113,14 @@ const AdminDashboard = () => {
     className: "bg-gradient-accent hover:opacity-90 text-white flex items-center gap-2"
   }, /*#__PURE__*/React.createElement(Plus, {
     className: "w-4 h-4"
-  }), "Add Club"), !["events", "opportunities", "clubs"].includes(activeTab) && /*#__PURE__*/React.createElement("div", null))), /*#__PURE__*/React.createElement("main", {
+  }), "Add Club"), !["events", "opportunities", "clubs"].includes(activeTab) && /*#__PURE__*/React.createElement("div", null), /*#__PURE__*/React.createElement(UserButton, {
+    afterSignOutUrl: "/",
+    appearance: {
+      elements: {
+        avatarBox: "w-10 h-10"
+      }
+    }
+  })))), /*#__PURE__*/React.createElement("main", {
     className: "flex-1 overflow-y-auto"
   }, activeTab === "overview" && /*#__PURE__*/React.createElement(OverviewTab, null), activeTab === "events" && /*#__PURE__*/React.createElement(EventsTab, null), activeTab === "bookings" && /*#__PURE__*/React.createElement(BookingsTab, null), activeTab === "opportunities" && /*#__PURE__*/React.createElement(OpportunitiesTab, null), activeTab === "clubs" && /*#__PURE__*/React.createElement(ClubsTab, null), activeTab === "club-applications" && /*#__PURE__*/React.createElement(ClubApplicationsTab, null), activeTab === "payments" && /*#__PURE__*/React.createElement(PaymentsTab, null), activeTab === "analytics" && /*#__PURE__*/React.createElement(AnalyticsTab, null))));
 };
@@ -731,11 +734,20 @@ const ClubsTab = () => {
   const {
     clubs,
     loadClubs,
-    deleteClub
+    deleteClub,
+    loading
   } = useClubs();
+  
   useEffect(() => {
     loadClubs();
   }, [loadClubs]);
+  
+  if (loading) {
+    return /*#__PURE__*/React.createElement("div", {
+      className: "p-6 text-center"
+    }, /*#__PURE__*/React.createElement("p", null, "Loading clubs..."));
+  }
+  
   return /*#__PURE__*/React.createElement("div", {
     className: "p-6"
   }, /*#__PURE__*/React.createElement(Card, {
@@ -751,7 +763,7 @@ const ClubsTab = () => {
   }, "No clubs created yet")) : /*#__PURE__*/React.createElement("div", {
     className: "space-y-4"
   }, clubs.map(club => /*#__PURE__*/React.createElement("div", {
-    key: club.id,
+    key: club._id || club.id,
     className: "border border-border rounded-lg p-4 hover:bg-secondary transition-all"
   }, /*#__PURE__*/React.createElement("div", {
     className: "grid grid-cols-1 md:grid-cols-4 gap-4 mb-3"
@@ -763,35 +775,34 @@ const ClubsTab = () => {
     className: "text-xs text-muted-foreground"
   }, "Members"), /*#__PURE__*/React.createElement("p", {
     className: "font-semibold text-foreground"
-  }, club.members, "+")), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("p", {
+  }, club.memberCount || club.members?.length || 0)), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("p", {
     className: "text-xs text-muted-foreground"
-  }, "Established"), /*#__PURE__*/React.createElement("p", {
-    className: "font-semibold text-foreground"
-  }, club.establishedYear)), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("p", {
+  }, "Category"), /*#__PURE__*/React.createElement("p", {
+    className: "font-semibold text-foreground capitalize"
+  }, club.category || 'other')), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("p", {
     className: "text-xs text-muted-foreground"
-  }, "President"), /*#__PURE__*/React.createElement("p", {
-    className: "font-semibold text-foreground"
-  }, club.president.name))), /*#__PURE__*/React.createElement("div", {
+  }, "Status"), /*#__PURE__*/React.createElement("p", {
+    className: "font-semibold text-foreground capitalize"
+  }, club.status || 'active'))), /*#__PURE__*/React.createElement("div", {
     className: "text-sm text-muted-foreground mb-3 line-clamp-2"
-  }, club.description), /*#__PURE__*/React.createElement("div", {
+  }, club.description || 'No description'), /*#__PURE__*/React.createElement("div", {
     className: "flex flex-wrap gap-2 mb-3"
-  }, club.tags.slice(0, 3).map((tag, idx) => /*#__PURE__*/React.createElement(Badge, {
-    key: idx,
+  }, club.email && /*#__PURE__*/React.createElement(Badge, {
     variant: "secondary",
     className: "text-xs"
-  }, tag)), club.tags.length > 3 && /*#__PURE__*/React.createElement(Badge, {
+  }, club.email), club.phone && /*#__PURE__*/React.createElement(Badge, {
     variant: "outline",
     className: "text-xs"
-  }, "+", club.tags.length - 3, " more")), /*#__PURE__*/React.createElement("div", {
+  }, club.phone)), /*#__PURE__*/React.createElement("div", {
     className: "flex items-center gap-2"
   }, /*#__PURE__*/React.createElement("button", {
-    onClick: () => window.open(`/club/${club.id}`, '_blank'),
+    onClick: () => window.open(`/club/${club._id || club.id}`, '_blank'),
     className: "p-2 hover:bg-secondary rounded-lg transition-all",
     title: "View"
   }, /*#__PURE__*/React.createElement(Eye, {
     className: "w-4 h-4 text-muted-foreground"
   })), /*#__PURE__*/React.createElement("button", {
-    onClick: () => navigate(`/admin/edit-club/${club.id}`),
+    onClick: () => navigate(`/admin/edit-club/${club._id || club.id}`),
     className: "p-2 hover:bg-secondary rounded-lg transition-all",
     title: "Edit"
   }, /*#__PURE__*/React.createElement(Edit2, {

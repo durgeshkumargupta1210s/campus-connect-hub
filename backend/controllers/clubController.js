@@ -75,7 +75,7 @@ export const getClubById = async (req, res) => {
   try {
     const club = await Club.findById(req.params.id)
       .populate('head')
-      .populate('members')
+      .populate('members', 'clerkId name email')
       .populate('events');
 
     if (!club) {

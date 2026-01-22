@@ -7,18 +7,22 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Calendar, Users, Ticket, Heart, LogOut, Settings, Bell, Loader2, AlertCircle } from "lucide-react";
-import { useAuth } from "@/context/AuthContext";
+import { useUser, useClerk } from "@clerk/clerk-react";
 import { APIClient, API_ENDPOINTS } from "@/config/api";
 import { useToast } from "@/hooks/use-toast";
 
 const UserDashboard = () => {
   const navigate = useNavigate();
-  const { user, userName, userEmail, logout } = useAuth();
+  const { user } = useUser();
+  const { signOut } = useClerk();
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState("overview");
   const [registrations, setRegistrations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  const userName = user?.fullName || user?.firstName || "User";
+  const userEmail = user?.primaryEmailAddress?.emailAddress || "";
 
   useEffect(() => {
     fetchRegistrations();
@@ -51,8 +55,8 @@ const UserDashboard = () => {
     }
   };
 
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    await signOut();
     navigate("/");
   };
 

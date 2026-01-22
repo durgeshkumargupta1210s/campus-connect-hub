@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { ArrowLeft, CheckCircle, AlertCircle, CreditCard, Smartphone, Landmark, Loader2 } from 'lucide-react';
 import { usePayments } from '@/hooks/usePayments';
-import { useAuth } from '@/context/AuthContext';
+import { useUser } from '@clerk/clerk-react';
 import { APIClient, API_ENDPOINTS } from '@/config/api';
 import { useToast } from '@/hooks/use-toast';
 import React from "react";
@@ -18,11 +18,9 @@ const PaymentCheckout = () => {
     eventId
   } = useParams();
   const navigate = useNavigate();
-  const {
-    userEmail,
-    userName,
-    isLoggedIn
-  } = useAuth();
+  const { isSignedIn, user } = useUser();
+  const userEmail = user?.primaryEmailAddress?.emailAddress || '';
+  const userName = user?.fullName || user?.firstName || '';
   const {
     createPayment
   } = usePayments();
@@ -49,7 +47,7 @@ const PaymentCheckout = () => {
         setLoading(false);
         return;
       }
-      if (!isLoggedIn) {
+      if (!isSignedIn) {
         setError('Please login to make a payment');
         setLoading(false);
         return;
@@ -92,7 +90,7 @@ const PaymentCheckout = () => {
       }
     };
     loadEvent();
-  }, [eventId, isLoggedIn]);
+  }, [eventId, isSignedIn]);
   if (loading) {
     return /*#__PURE__*/React.createElement("div", {
       className: "min-h-screen flex flex-col"

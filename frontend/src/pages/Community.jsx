@@ -6,11 +6,17 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useClubs } from "@/hooks/useClubs";
+import { useUser } from "@clerk/clerk-react";
+import { useUserRole } from "@/hooks/useUserRole";
 import { Users, Heart, BookOpen, Loader2 } from "lucide-react";
 
 const Community = () => {
   const navigate = useNavigate();
   const { clubs, loading, error, loadClubs } = useClubs();
+  const { user } = useUser();
+  const { role: userRole } = useUserRole();
+  
+  const isAdmin = userRole === 'admin';
 
   useEffect(() => {
     loadClubs();
@@ -58,13 +64,15 @@ const Community = () => {
             {!loading && clubs.length === 0 && (
               <div className="text-center py-12">
                 <p className="text-muted-foreground mb-6">No clubs found yet.</p>
-                <Button 
-                  size="lg"
-                  className="bg-primary hover:bg-primary/90"
-                  onClick={() => navigate("/create-club")}
-                >
-                  Create the First Club
-                </Button>
+                {isAdmin && (
+                  <Button 
+                    size="lg"
+                    className="bg-primary hover:bg-primary/90"
+                    onClick={() => navigate("/create-club")}
+                  >
+                    Create the First Club
+                  </Button>
+                )}
               </div>
             )}
 
@@ -159,21 +167,23 @@ const Community = () => {
         </section>
 
         {/* Create Club CTA Section */}
-        <section className="py-20 px-4 bg-gradient-hero">
-          <div className="container mx-auto text-center">
-            <h2 className="text-4xl font-bold text-white mb-6">Start Your Club Journey</h2>
-            <p className="text-xl text-white/90 mb-8 max-w-2xl mx-auto">
-              Don't see a club that matches your interest? Start your own community!
-            </p>
-            <Button
-              size="lg"
-              className="bg-accent hover:bg-accent/90 text-accent-foreground"
-              onClick={() => navigate("/create-club")}
-            >
-              Create a Club
-            </Button>
-          </div>
-        </section>
+        {isAdmin && (
+          <section className="py-20 px-4 bg-gradient-hero">
+            <div className="container mx-auto text-center">
+              <h2 className="text-4xl font-bold text-white mb-6">Start Your Club Journey</h2>
+              <p className="text-xl text-white/90 mb-8 max-w-2xl mx-auto">
+                Don't see a club that matches your interest? Start your own community!
+              </p>
+              <Button
+                size="lg"
+                className="bg-accent hover:bg-accent/90 text-accent-foreground"
+                onClick={() => navigate("/create-club")}
+              >
+                Create a Club
+              </Button>
+            </div>
+          </section>
+        )}
       </main>
       <Footer />
     </div>

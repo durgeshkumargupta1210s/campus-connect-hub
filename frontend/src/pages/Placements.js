@@ -17,36 +17,54 @@ const Placements = () => {
   const navigate = useNavigate();
   const {
     loadOpportunities,
-    opportunities,
-    getActiveOpportunities,
-    getUpcomingOpportunities
+    opportunities
   } = useOpportunities();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedType, setSelectedType] = useState('All');
   const [filteredOpportunities, setFilteredOpportunities] = useState([]);
+  
   useEffect(() => {
     loadOpportunities();
   }, [loadOpportunities]);
   useEffect(() => {
-    loadOpportunities();
-  }, [loadOpportunities]);
-  useEffect(() => {
-    let filtered = opportunities;
+    let filtered = [...opportunities];
 
-    // Filter by type
+    // Filter by type (case-insensitive, handle snake_case)
     if (selectedType !== 'All') {
-      filtered = filtered.filter(opp => opp.type === selectedType);
+      const normalizedType = selectedType.toLowerCase().replace(/\s+/g, '_');
+      filtered = filtered.filter(opp => {
+        const oppType = (opp.type || '').toLowerCase();
+        return oppType === normalizedType;
+      });
     }
 
     // Filter by search term
     if (searchTerm.trim()) {
       const search = searchTerm.toLowerCase();
-      filtered = filtered.filter(opp => opp.title.toLowerCase().includes(search) || opp.company.toLowerCase().includes(search) || opp.description?.toLowerCase().includes(search) || opp.location?.toLowerCase().includes(search));
+      filtered = filtered.filter(opp => 
+        (opp.title || '').toLowerCase().includes(search) || 
+        (opp.company || '').toLowerCase().includes(search) || 
+        (opp.description || '').toLowerCase().includes(search) || 
+        (opp.location || '').toLowerCase().includes(search)
+      );
     }
     setFilteredOpportunities(filtered);
   }, [opportunities, searchTerm, selectedType]);
-  const activeOpps = filteredOpportunities.filter(opp => opp.status === 'Active');
-  const upcomingOpps = filteredOpportunities.filter(opp => opp.status === 'Upcoming');
+  
+  // Filter active opportunities (status is 'active')
+  const activeOpps = filteredOpportunities.filter(opp => 
+    opp.status && String(opp.status).toLowerCase() === 'active'
+  );
+  
+  // Filter upcoming opportunities (active with deadline more than 3 days away)
+  const now = new Date();
+  const threeDaysFromNow = new Date(now.getTime() + (3 * 24 * 60 * 60 * 1000));
+  const upcomingOpps = filteredOpportunities.filter(opp => {
+    if (!opp.status || String(opp.status).toLowerCase() !== 'active') return false;
+    if (!opp.deadline) return false;
+    const deadlineDate = new Date(opp.deadline);
+    return deadlineDate > threeDaysFromNow;
+  });
   const OpportunityCard = ({
     opportunity
   }) => {
@@ -115,14 +133,14 @@ const Placements = () => {
     }, "Apply Now ", /*#__PURE__*/React.createElement(ExternalLink, {
       className: "w-3 h-3 ml-2"
     }))), /*#__PURE__*/React.createElement(Link, {
-      to: `/opportunity/${opportunity.id}`,
+      to: `/opportunity/${opportunity._id || opportunity.id}`,
       className: "flex-1",
       onClick: e => e.stopPropagation()
     }, /*#__PURE__*/React.createElement(Button, {
       variant: "outline",
       className: "w-full"
     }, "Details"))) : /*#__PURE__*/React.createElement(Link, {
-      to: `/opportunity/${opportunity.id}`,
+      to: `/opportunity/${opportunity._id || opportunity.id}`,
       className: "flex-1"
     }, /*#__PURE__*/React.createElement(Button, {
       className: "w-full bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white font-semibold"

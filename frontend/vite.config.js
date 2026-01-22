@@ -17,7 +17,17 @@ export default defineConfig({
       "@": path.resolve(process.cwd(), "./src"),
     },
   },
+  esbuild: {
+    loader: 'jsx',
+    include: /src\/.*\.js$/,
+    exclude: []
+  },
   optimizeDeps: {
+    esbuildOptions: {
+      loader: {
+        '.js': 'jsx'
+      }
+    },
     include: [
       '@radix-ui/react-accordion',
       '@radix-ui/react-alert-dialog',
