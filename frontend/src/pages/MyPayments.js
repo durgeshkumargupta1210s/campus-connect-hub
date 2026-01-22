@@ -9,13 +9,12 @@ import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
 import { ArrowLeft, CreditCard, Search, Download, Calendar, AlertCircle } from 'lucide-react';
 import { usePayments } from '@/hooks/usePayments';
-import { useAuth } from '@/context/AuthContext';
+import { useUser } from '@clerk/clerk-react';
 import React from "react";
 const MyPayments = () => {
   const navigate = useNavigate();
-  const {
-    userEmail
-  } = useAuth();
+  const { isSignedIn, user } = useUser();
+  const userEmail = user?.primaryEmailAddress?.emailAddress || '';
   const {
     getPaymentsByUserId
   } = usePayments();

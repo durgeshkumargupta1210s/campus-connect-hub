@@ -11,6 +11,7 @@ dotenv.config();
 // Import routes
 import authRoutes from './routes/authRoutes.js';
 import userRoutes from './routes/userRoutes.js';
+import userMetadataRoutes from './routes/userMetadataRoutes.js';
 import eventRoutes from './routes/eventRoutes.js';
 import clubRoutes from './routes/clubRoutes.js';
 import opportunityRoutes from './routes/opportunityRoutes.js';
@@ -53,6 +54,7 @@ app.get('/api/health', (req, res) => {
 
 // API Routes
 app.use('/api/auth', authRoutes);
+app.use('/api/user-metadata', userMetadataRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/events', eventRoutes);
 app.use('/api/clubs', clubRoutes);

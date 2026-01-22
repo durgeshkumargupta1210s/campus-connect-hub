@@ -201,14 +201,42 @@ export default function AdminAddClub() {
     e.preventDefault();
     setIsLoading(true);
     try {
+      // Transform form data to match backend schema
+      const clubData = {
+        name: formData.name,
+        description: formData.description || formData.about,
+        email: formData.contactEmail || formData.president?.email,
+        phone: formData.contactPhone,
+        category: formData.tags?.[0] || 'other',
+        imageUrl: formData.gallery?.[0],
+        website: formData.social?.linkedin,
+        location: '',
+        socialLinks: {
+          instagram: formData.social?.instagram,
+          linkedin: formData.social?.linkedin,
+          discord: formData.social?.discord
+        }
+      };
+      
+      console.log('Submitting club data:', clubData);
+      
+      let result;
       if (id) {
-        updateClub(id, formData);
+        result = await updateClub(id, clubData);
       } else {
-        addClub(formData);
+        result = await addClub(clubData);
       }
-      navigate("/admin?tab=clubs");
+      
+      if (result.success) {
+        console.log('Club saved successfully:', result);
+        navigate("/admin?tab=clubs");
+      } else {
+        console.error('Failed to save club:', result.error);
+        alert('Failed to save club: ' + result.error);
+      }
     } catch (error) {
       console.error("Error saving club:", error);
+      alert('Error saving club: ' + error.message);
     } finally {
       setIsLoading(false);
     }

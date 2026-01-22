@@ -2,6 +2,11 @@ import mongoose from 'mongoose';
 import bcrypt from 'bcryptjs';
 
 const userSchema = new mongoose.Schema({
+  clerkId: {
+    type: String,
+    unique: true,
+    sparse: true // Allows null values while maintaining uniqueness
+  },
   name: {
     type: String,
     required: [true, 'Please provide a name'],
@@ -17,14 +22,13 @@ const userSchema = new mongoose.Schema({
   },
   password: {
     type: String,
-    required: [true, 'Please provide a password'],
     minlength: 6,
     select: false
   },
   role: {
     type: String,
-    enum: ['student', 'admin', 'club_head', 'recruiter'],
-    default: 'student'
+    enum: ['student', 'admin', 'club_head', 'recruiter', 'user'],
+    default: 'user'
   },
   phone: String,
   college: String,

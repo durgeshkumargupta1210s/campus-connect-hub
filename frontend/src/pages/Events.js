@@ -105,7 +105,17 @@ const Events = () => {
     className: "text-4xl md:text-5xl font-bold text-foreground mb-4"
   }, "Upcoming Events"), /*#__PURE__*/React.createElement("p", {
     className: "text-xl text-muted-foreground max-w-2xl mx-auto"
-  }, "Mark your calendar and register for the most exciting events")), /*#__PURE__*/React.createElement("div", {
+  }, "Mark your calendar and register for the most exciting events")), loading ? /*#__PURE__*/React.createElement("div", {
+    className: "text-center py-12"
+  }, /*#__PURE__*/React.createElement("p", {
+    className: "text-xl text-muted-foreground"
+  }, "Loading events...")) : hackathons.length === 0 ? /*#__PURE__*/React.createElement("div", {
+    className: "text-center py-12"
+  }, /*#__PURE__*/React.createElement("p", {
+    className: "text-xl text-muted-foreground mb-4"
+  }, "No events available at the moment"), /*#__PURE__*/React.createElement("p", {
+    className: "text-muted-foreground"
+  }, "Check back soon for upcoming events!")) : /*#__PURE__*/React.createElement("div", {
     className: "grid grid-cols-1 lg:grid-cols-3 gap-8"
   }, hackathons.map((hack, index) => /*#__PURE__*/React.createElement("button", {
     key: index,
@@ -180,7 +190,7 @@ const Events = () => {
     key: i,
     variant: "secondary",
     className: "text-xs"
-  }, tag)))))))))))), /*#__PURE__*/React.createElement("section", {
+  }, tag)))))))))))))), /*#__PURE__*/React.createElement("section", {
     className: "py-24 px-4 bg-background"
   }, /*#__PURE__*/React.createElement("div", {
     className: "container mx-auto"

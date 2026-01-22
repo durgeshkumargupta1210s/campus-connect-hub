@@ -1,3 +1,5 @@
+import { useAuth } from '@clerk/clerk-react';
+
 // API Configuration and helper functions
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 export const API_ENDPOINTS = {
@@ -60,30 +62,30 @@ export const API_ENDPOINTS = {
 };
 
 // API Helper class
+let getClerkToken = null;
+
+export const setClerkTokenGetter = (getter) => {
+  getClerkToken = getter;
+};
+
 export class APIClient {
-  static token = null;
-  static setToken(token) {
-    this.token = token;
-    localStorage.setItem('authToken', token);
-  }
-  static getToken() {
-    if (!this.token) {
-      this.token = localStorage.getItem('authToken');
-    }
-    return this.token;
-  }
-  static clearToken() {
-    this.token = null;
-    localStorage.removeItem('authToken');
-  }
-  static getHeaders() {
+  static async getHeaders() {
     const headers = {
       'Content-Type': 'application/json'
     };
-    const token = this.getToken();
-    if (token) {
-      headers['Authorization'] = `Bearer ${token}`;
+    
+    // Get Clerk token
+    if (getClerkToken) {
+      try {
+        const token = await getClerkToken();
+        if (token) {
+          headers['Authorization'] = `Bearer ${token}`;
+        }
+      } catch (error) {
+        console.error('Error getting Clerk token:', error);
+      }
     }
+    
     return headers;
   }
 
@@ -91,19 +93,22 @@ export class APIClient {
   static async request(endpoint, options = {}) {
     const url = endpoint.startsWith('http') ? endpoint : `${API_BASE_URL}${endpoint}`;
     try {
+      const headers = await this.getHeaders();
+      
       const response = await fetch(url, {
         ...options,
         headers: {
-          ...this.getHeaders(),
+          ...headers,
           ...options.headers
         }
       });
 
-      // Handle 401 Unauthorized - clear token and redirect to login
+      // Handle 401 Unauthorized
       if (response.status === 401) {
-        this.clearToken();
-        window.location.href = '/login';
+        console.error('Unauthorized request');
+        throw new Error('Unauthorized');
       }
+      
       const data = await response.json();
       if (!response.ok) {
         throw new Error(data.message || `API Error: ${response.status}`);
@@ -150,11 +155,10 @@ export class APIClient {
     const formData = new FormData();
     formData.append('file', file);
     try {
-      const token = this.getToken();
-      const headers = {};
-      if (token) {
-        headers['Authorization'] = `Bearer ${token}`;
-      }
+      const headers = await this.getHeaders();
+      // Remove Content-Type for FormData
+      delete headers['Content-Type'];
+      
       const response = await fetch(endpoint, {
         method: 'POST',
         body: formData,

@@ -38,23 +38,31 @@ export const useClubs = () => {
     return clubs.find(club => club._id === id || club.id === id);
   }, [clubs]);
 
-  const addClub = useCallback((clubData) => {
+  const addClub = useCallback(async (clubData) => {
     try {
       setError(null);
       setLoading(true);
-      // Add club to local state immediately
-      const newClub = {
-        ...clubData,
-        _id: `temp_${Date.now()}`
-      };
-      setClubs(prev => [...prev, newClub]);
+      
+      console.log('Creating club with data:', clubData);
+      
+      // Call backend API to create club
+      const response = await APIClient.post(API_ENDPOINTS.CLUBS_CREATE, clubData);
+      console.log('Club creation response:', response);
+      
+      // Add the created club to local state
+      if (response.club) {
+        setClubs(prev => [...prev, response.club]);
+      }
+      
       return {
         success: true,
-        club: newClub
+        club: response.club,
+        message: response.message
       };
     } catch (err) {
       const errorMsg = err instanceof Error ? err.message : 'Failed to add club';
       setError(errorMsg);
+      console.error('Add club error:', err);
       return {
         success: false,
         error: errorMsg
@@ -64,31 +72,41 @@ export const useClubs = () => {
     }
   }, []);
 
-  const updateClub = useCallback((id, updates) => {
+  const updateClub = useCallback(async (id, updates) => {
     try {
       setError(null);
-      const updated = clubs.find(club => club._id === id || club.id === id);
-      if (updated) {
-        const newClub = { ...updated, ...updates };
-        setClubs(prev => prev.map(club => (club._id === id || club.id === id) ? newClub : club));
-        return {
-          success: true,
-          club: newClub
-        };
+      setLoading(true);
+      
+      console.log('Updating club:', id, 'with data:', updates);
+      
+      // Call backend API to update club
+      const response = await APIClient.put(API_ENDPOINTS.CLUBS_UPDATE(id), updates);
+      console.log('Club update response:', response);
+      
+      // Update local state
+      if (response.club) {
+        setClubs(prev => prev.map(club => 
+          (club._id === id || club.id === id) ? response.club : club
+        ));
       }
+      
       return {
-        success: false,
-        error: 'Club not found'
+        success: true,
+        club: response.club,
+        message: response.message
       };
     } catch (err) {
       const errorMsg = err instanceof Error ? err.message : 'Failed to update club';
       setError(errorMsg);
+      console.error('Update club error:', err);
       return {
         success: false,
         error: errorMsg
       };
+    } finally {
+      setLoading(false);
     }
-  }, [clubs]);
+  }, []);
 
   const deleteClub = useCallback((id) => {
     try {

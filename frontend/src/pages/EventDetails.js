@@ -10,7 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { ArrowLeft, Calendar, MapPin, Users, Trophy, Clock, Mail, Phone, CheckCircle, AlertCircle, Plus, Trash2, CreditCard } from 'lucide-react';
 import { useRegistrations } from '@/hooks/useRegistrations';
 import { useGroupRegistrations } from '@/hooks/useGroupRegistrations';
-import { useAuth } from '@/context/AuthContext';
+import { useUser } from '@clerk/clerk-react';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { APIClient, API_ENDPOINTS } from '@/config/api';
 import { useToast } from '@/hooks/use-toast';
@@ -20,11 +20,9 @@ const EventDetails = () => {
     eventId
   } = useParams();
   const navigate = useNavigate();
-  const {
-    isLoggedIn,
-    userEmail,
-    userName
-  } = useAuth();
+  const { isSignedIn, user } = useUser();
+  const userEmail = user?.primaryEmailAddress?.emailAddress || '';
+  const userName = user?.fullName || user?.firstName || '';
   const {
     toast
   } = useToast();
@@ -651,7 +649,7 @@ const EventDetails = () => {
         });
         return;
       }
-      if (!isLoggedIn) {
+      if (!isSignedIn) {
         toast({
           title: "Login Required",
           description: "Please login to proceed with payment.",
@@ -670,7 +668,7 @@ const EventDetails = () => {
     size: "lg"
   }, /*#__PURE__*/React.createElement(CreditCard, {
     className: "w-4 h-4 mr-2"
-  }), !isLoggedIn ? 'Login to Pay' : userAlreadyRegistered ? 'Already Registered' : 'Proceed to Payment') : /*#__PURE__*/React.createElement(React.Fragment, null, isGroupEvent && /*#__PURE__*/React.createElement(Tabs, {
+  }), !isSignedIn ? 'Login to Pay' : userAlreadyRegistered ? 'Already Registered' : 'Proceed to Payment') : /*#__PURE__*/React.createElement(React.Fragment, null, isGroupEvent && /*#__PURE__*/React.createElement(Tabs, {
     value: registrationType,
     onValueChange: value => setRegistrationType(value),
     className: "mb-4"

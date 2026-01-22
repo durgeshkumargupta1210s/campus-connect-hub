@@ -8,13 +8,12 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ArrowLeft, Ticket, Calendar, MapPin, Copy, Download, AlertCircle } from 'lucide-react';
 import { useTickets } from '@/hooks/useTickets';
-import { useAuth } from '@/context/AuthContext';
+import { useUser } from '@clerk/clerk-react';
 import React from "react";
 const MyTickets = () => {
   const navigate = useNavigate();
-  const {
-    userEmail
-  } = useAuth();
+  const { isSignedIn, user } = useUser();
+  const userEmail = user?.primaryEmailAddress?.emailAddress || '';
   const {
     getMyTickets,
     updateTicketStatus

@@ -30,9 +30,15 @@ export const createOpportunity = async (req, res) => {
 
 export const getOpportunities = async (req, res) => {
   try {
-    const { type, status, page = 1, limit = 10 } = req.query;
+    const { type, status, page = 1, limit = 100 } = req.query;
     
-    let filter = { status: 'active' };
+    // Build filter - if no status specified, show active ones by default
+    let filter = {};
+    if (status) {
+      filter.status = status;
+    } else {
+      filter.status = 'active'; // Default to active opportunities
+    }
     if (type) filter.type = type;
 
     const opportunities = await Opportunity.find(filter)
@@ -58,7 +64,8 @@ export const getOpportunities = async (req, res) => {
 export const getOpportunityById = async (req, res) => {
   try {
     const opportunity = await Opportunity.findById(req.params.id)
-      .populate('postedBy');
+      .populate('postedBy')
+      .populate('applications.userId', 'clerkId');
 
     if (!opportunity) {
       return res.status(404).json({ message: 'Opportunity not found' });

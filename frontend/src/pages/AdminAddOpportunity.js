@@ -21,7 +21,7 @@ export default function AdminAddOpportunity() {
   const [formData, setFormData] = useState({
     title: '',
     company: '',
-    type: 'Job',
+    type: 'Internship',
     ctc: '',
     positions: '',
     jobProfile: '',
@@ -58,31 +58,36 @@ export default function AdminAddOpportunity() {
       alert('Please fill in all required fields');
       return;
     }
+    
+    // Ensure description is provided
+    if (!formData.description) {
+      alert('Please provide a description');
+      return;
+    }
+    
     const opportunityData = {
       title: formData.title,
       company: formData.company,
-      type: formData.type,
-      ctc: formData.ctc || '-',
-      positions: parseInt(formData.positions) || 0,
-      jobProfile: formData.jobProfile,
-      description: formData.description,
-      eligibility: formData.eligibility,
-      applyLink: formData.applyLink,
+      type: formData.type.toLowerCase().replace(/\s+/g, '_'), // Convert 'Campus Drive' to 'campus_drive'
+      description: formData.description, // Required field
+      position: formData.jobProfile,
+      salary: formData.ctc,
       deadline: formData.deadline,
       location: formData.location,
-      skills: formData.skills.split(',').map(s => s.trim()).filter(s => s),
-      tags: formData.tags.split(',').map(t => t.trim()).filter(t => t),
-      contactEmail: formData.contactEmail,
-      contactPhone: formData.contactPhone,
-      status: formData.status
+      requirements: formData.eligibility ? formData.eligibility.split(',').map(s => s.trim()).filter(s => s) : [],
+      status: formData.status.toLowerCase()
     };
-    const result = addOpportunity(opportunityData);
+    
+    console.log('Submitting opportunity:', opportunityData);
+    
+    const result = await addOpportunity(opportunityData);
+    
     if (result.success) {
       setSuccessMessage(`Opportunity "${formData.title}" added successfully!`);
       setFormData({
         title: '',
         company: '',
-        type: 'Job',
+        type: 'Internship',
         ctc: '',
         positions: '',
         jobProfile: '',
@@ -176,12 +181,18 @@ export default function AdminAddOpportunity() {
     id: "type",
     className: "mt-1"
   }, /*#__PURE__*/React.createElement(SelectValue, null)), /*#__PURE__*/React.createElement(SelectContent, null, /*#__PURE__*/React.createElement(SelectItem, {
-    value: "Job"
-  }, "Job"), /*#__PURE__*/React.createElement(SelectItem, {
     value: "Internship"
   }, "Internship"), /*#__PURE__*/React.createElement(SelectItem, {
-    value: "Fellowship"
-  }, "Fellowship")))), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement(Label, {
+    value: "Placement"
+  }, "Placement"), /*#__PURE__*/React.createElement(SelectItem, {
+    value: "Campus Drive"
+  }, "Campus Drive"), /*#__PURE__*/React.createElement(SelectItem, {
+    value: "Workshop"
+  }, "Workshop"), /*#__PURE__*/React.createElement(SelectItem, {
+    value: "Hackathon"
+  }, "Hackathon"), /*#__PURE__*/React.createElement(SelectItem, {
+    value: "Other"
+  }, "Other")))), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement(Label, {
     htmlFor: "status",
     className: "text-slate-700 font-semibold"
   }, "Status"), /*#__PURE__*/React.createElement(Select, {

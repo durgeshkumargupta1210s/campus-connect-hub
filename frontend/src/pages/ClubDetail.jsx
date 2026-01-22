@@ -1,379 +1,215 @@
-import { useEffect, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
-import Navbar from "@/components/Navbar";
-import Footer from "@/components/Footer";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { useToast } from "@/hooks/use-toast";
-import { Users, Mail, Phone, MapPin, Loader2, ArrowLeft, Heart, Share2 } from "lucide-react";
-import { APIClient, API_ENDPOINTS } from "@/config/api";
-
-const ClubDetail = () => {
-  const { id } = useParams();
+import { useParams, useNavigate } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { useUser } from '@clerk/clerk-react';
+import Navbar from '@/components/Navbar';
+import Footer from '@/components/Footer';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { useClubs } from '@/hooks/useClubs';
+import { ArrowLeft, Users, Mail, Phone, Calendar, Instagram, Linkedin, MessageCircle, Trophy, Image as ImageIcon, User } from 'lucide-react';
+import React from "react";
+export default function ClubDetail() {
+  const {
+    id
+  } = useParams();
   const navigate = useNavigate();
-  const { toast } = useToast();
+  const { user } = useUser();
+  const userId = user?.id;
+  const {
+    getClubById,
+    loadClubs,
+    clubs
+  } = useClubs();
   const [club, setClub] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
   const [isMember, setIsMember] = useState(false);
-  const [isJoining, setIsJoining] = useState(false);
-
   useEffect(() => {
-    fetchClubDetails();
-    
-    return () => {
-      // Cleanup on unmount
-      setClub(null);
-      setError(null);
-    };
-  }, [id]);
+    loadClubs();
+  }, [loadClubs]);
+  useEffect(() => {
+    if (clubs.length > 0 && id) {
+      const foundClub = getClubById(id);
+      setClub(foundClub || null);
+    }
+  }, [id, clubs, getClubById]);
 
-  const fetchClubDetails = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const response = await APIClient.get(API_ENDPOINTS.CLUBS_GET(id));
-      setClub(response);
-      
-      // Check if user is a member
-      const authToken = localStorage.getItem("authToken");
-      if (authToken) {
-        try {
-          const userResponse = await APIClient.get(API_ENDPOINTS.USERS_PROFILE);
-          const userId = userResponse._id || userResponse.id;
-          setIsMember(response.members?.some(m => (m._id || m.id || m) === userId) || false);
-        } catch (err) {
-          console.log("User profile fetch skipped");
+  // Check if user is already a member
+  useEffect(() => {
+    if (userId && club?.members) {
+      const isUserMember = club.members.some(
+        member => {
+          const memberClerkId = member?.clerkId || member;
+          return memberClerkId === userId;
         }
-      }
-    } catch (err) {
-      console.error("Error fetching club:", err);
-      setError(err.message || "Failed to load club details");
-    } finally {
-      setLoading(false);
+      );
+      console.log('Checking membership:', { userId, members: club.members, isUserMember });
+      setIsMember(isUserMember);
     }
-  };
-
-  const handleJoinClub = async () => {
-    const authToken = localStorage.getItem("authToken");
-    if (!authToken) {
-      toast({
-        title: "Not Logged In",
-        description: "Please log in to join a club",
-        variant: "destructive"
-      });
-      navigate("/login");
-      return;
-    }
-
-    try {
-      setIsJoining(true);
-      await APIClient.post(API_ENDPOINTS.CLUBS_JOIN(id));
-      setIsMember(true);
-      // Refresh club details
-      await fetchClubDetails();
-      toast({
-        title: "Success",
-        description: "You have successfully joined the club!",
-        variant: "default"
-      });
-    } catch (err) {
-      toast({
-        title: "Error",
-        description: err.message || "Failed to join club",
-        variant: "destructive"
-      });
-    } finally {
-      setIsJoining(false);
-    }
-  };
-
-  const handleLeavClub = async () => {
-    try {
-      setIsJoining(true);
-      await APIClient.post(API_ENDPOINTS.CLUBS_LEAVE(id));
-      setIsMember(false);
-      // Refresh club details
-      await fetchClubDetails();
-      toast({
-        title: "Success",
-        description: "You have left the club",
-        variant: "default"
-      });
-    } catch (err) {
-      toast({
-        title: "Error",
-        description: err.message || "Failed to leave club",
-        variant: "destructive"
-      });
-    } finally {
-      setIsJoining(false);
-    }
-  };
-
-  const getCategoryColor = (category) => {
-    const colors = {
-      technical: "bg-blue-500",
-      cultural: "bg-purple-500",
-      sports: "bg-green-500",
-      academic: "bg-orange-500",
-      professional: "bg-red-500",
-      other: "bg-gray-500"
-    };
-    return colors[category] || "bg-gray-500";
-  };
-
-  if (loading) {
-    return (
-      <div className="min-h-screen flex flex-col">
-        <Navbar />
-        <main className="flex-1 flex items-center justify-center">
-          <div className="flex flex-col items-center gap-4">
-            <Loader2 className="w-8 h-8 animate-spin text-primary" />
-            <p className="text-muted-foreground">Loading club details...</p>
-          </div>
-        </main>
-        <Footer />
-      </div>
-    );
+  }, [userId, club]);
+  if (!club) {
+    return /*#__PURE__*/React.createElement("div", {
+      className: "min-h-screen flex flex-col"
+    }, /*#__PURE__*/React.createElement(Navbar, null), /*#__PURE__*/React.createElement("div", {
+      className: "flex-1 flex items-center justify-center"
+    }, /*#__PURE__*/React.createElement(Card, {
+      className: "max-w-md"
+    }, /*#__PURE__*/React.createElement(CardContent, {
+      className: "pt-6 text-center"
+    }, /*#__PURE__*/React.createElement("p", {
+      className: "text-slate-600 mb-4"
+    }, "Club not found"), /*#__PURE__*/React.createElement(Button, {
+      onClick: () => navigate('/community')
+    }, "Back to Communities")))), /*#__PURE__*/React.createElement(Footer, null));
   }
-
-  if (error || !club) {
-    return (
-      <div className="min-h-screen flex flex-col">
-        <Navbar />
-        <main className="flex-1 flex items-center justify-center">
-          <div className="text-center">
-            <p className="text-destructive mb-4">{error || "Club not found"}</p>
-            <Button onClick={() => navigate("/community")} variant="outline">
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Back to Clubs
-            </Button>
-          </div>
-        </main>
-        <Footer />
-      </div>
-    );
-  }
-
-  return (
-    <div className="min-h-screen flex flex-col">
-      <Navbar />
-      <main className="flex-1 py-12 px-4">
-        <div className="container mx-auto max-w-4xl">
-          {/* Back Button */}
-          <Button 
-            variant="outline" 
-            className="mb-6"
-            onClick={() => navigate("/community")}
-          >
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Back to Clubs
-          </Button>
-
-          {/* Hero Section */}
-          <div className={`h-48 rounded-lg mb-8 flex items-center justify-center relative overflow-hidden ${getCategoryColor(club.category)}`}>
-            <div className="text-white text-8xl opacity-20">#{club.category?.[0]?.toUpperCase() || 'C'}</div>
-          </div>
-
-          {/* Main Content */}
-          <div className="grid md:grid-cols-3 gap-8">
-            {/* Left Column - Main Info */}
-            <div className="md:col-span-2 space-y-6">
-              {/* Title and Category */}
-              <div>
-                <h1 className="text-4xl font-bold mb-4">{club.name}</h1>
-                <div className="flex flex-wrap gap-2 mb-4">
-                  <Badge className={`${getCategoryColor(club.category)} text-white capitalize`}>
-                    {club.category}
-                  </Badge>
-                  <Badge variant="outline">
-                    {club.members?.length || 0} Members
-                  </Badge>
-                </div>
-              </div>
-
-              {/* Description */}
-              <Card>
-                <CardHeader>
-                  <CardTitle>About</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-muted-foreground">{club.description}</p>
-                </CardContent>
-              </Card>
-
-              {/* Contact Information */}
-              <Card>
-                <CardHeader>
-                  <CardTitle>Contact Information</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  {club.email && (
-                    <div className="flex items-center gap-3">
-                      <Mail className="w-5 h-5 text-muted-foreground" />
-                      <div>
-                        <p className="text-sm text-muted-foreground">Email</p>
-                        <a href={`mailto:${club.email}`} className="text-primary hover:underline">
-                          {club.email}
-                        </a>
-                      </div>
-                    </div>
-                  )}
-                  {club.phone && (
-                    <div className="flex items-center gap-3">
-                      <Phone className="w-5 h-5 text-muted-foreground" />
-                      <div>
-                        <p className="text-sm text-muted-foreground">Phone</p>
-                        <a href={`tel:${club.phone}`} className="text-primary hover:underline">
-                          {club.phone}
-                        </a>
-                      </div>
-                    </div>
-                  )}
-                  {club.location && (
-                    <div className="flex items-center gap-3">
-                      <MapPin className="w-5 h-5 text-muted-foreground" />
-                      <div>
-                        <p className="text-sm text-muted-foreground">Location</p>
-                        <p className="text-foreground">{club.location}</p>
-                      </div>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-
-              {/* Members Section */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Users className="w-5 h-5" />
-                    Members ({club.members?.length || 0})
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {club.members && club.members.length > 0 ? (
-                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-                      {club.members.map((member, index) => (
-                        <div key={index} className="flex items-center gap-2">
-                          <Avatar className="w-10 h-10">
-                            <AvatarImage src={member.avatar} />
-                            <AvatarFallback>
-                              {(member.name || member.email || `Member ${index + 1}`).substring(0, 2).toUpperCase()}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div className="min-w-0">
-                            <p className="text-sm font-medium truncate">{member.name || member.email}</p>
-                            {member.email && <p className="text-xs text-muted-foreground truncate">{member.email}</p>}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="text-muted-foreground">No members yet. Be the first to join!</p>
-                  )}
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Right Column - Sidebar */}
-            <div className="space-y-4">
-              {/* Join/Leave Button */}
-              <Card>
-                <CardHeader>
-                  <CardTitle>Join this Club</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {isMember ? (
-                    <Button
-                      className="w-full bg-destructive hover:bg-destructive/90"
-                      onClick={handleLeavClub}
-                      disabled={isJoining}
-                    >
-                      {isJoining ? (
-                        <>
-                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                          Leaving...
-                        </>
-                      ) : (
-                        "Leave Club"
-                      )}
-                    </Button>
-                  ) : (
-                    <Button
-                      className="w-full bg-primary hover:bg-primary/90"
-                      onClick={handleJoinClub}
-                      disabled={isJoining}
-                    >
-                      {isJoining ? (
-                        <>
-                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                          Joining...
-                        </>
-                      ) : (
-                        "Join Club"
-                      )}
-                    </Button>
-                  )}
-                </CardContent>
-              </Card>
-
-              {/* Quick Stats */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg">Quick Stats</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <div>
-                    <p className="text-sm text-muted-foreground">Members</p>
-                    <p className="text-2xl font-bold">{club.members?.length || 0}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">Category</p>
-                    <p className="text-lg font-semibold capitalize">{club.category}</p>
-                  </div>
-                  {club.createdAt && (
-                    <div>
-                      <p className="text-sm text-muted-foreground">Founded</p>
-                      <p className="text-sm">{new Date(club.createdAt).toLocaleDateString()}</p>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-
-              {/* Share Section */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg">Share</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <Button 
-                    variant="outline" 
-                    className="w-full"
-                    onClick={() => {
-                      const url = window.location.href;
-                      navigator.clipboard.writeText(url);
-                      toast({
-                        title: "Copied",
-                        description: "Club link copied to clipboard!",
-                        variant: "default"
-                      });
-                    }}
-                  >
-                    <Share2 className="w-4 h-4 mr-2" />
-                    Copy Link
-                  </Button>
-                </CardContent>
-              </Card>
-            </div>
-          </div>
-        </div>
-      </main>
-      <Footer />
-    </div>
-  );
-};
-
-export default ClubDetail;
+  return /*#__PURE__*/React.createElement("div", {
+    className: "min-h-screen flex flex-col"
+  }, /*#__PURE__*/React.createElement(Navbar, null), /*#__PURE__*/React.createElement("main", {
+    className: "flex-1"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "bg-slate-50 border-b border-slate-200 sticky top-16 z-40"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "container mx-auto px-4 py-3"
+  }, /*#__PURE__*/React.createElement(Button, {
+    variant: "ghost",
+    onClick: () => navigate('/community'),
+    className: "flex items-center gap-2"
+  }, /*#__PURE__*/React.createElement(ArrowLeft, {
+    className: "w-4 h-4"
+  }), "Back to Communities"))), /*#__PURE__*/React.createElement("section", {
+    className: "bg-gradient-to-r from-blue-600 to-purple-600 text-white py-16"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "container mx-auto px-4"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex items-start justify-between gap-6 mb-6"
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("h1", {
+    className: "text-5xl font-bold mb-3"
+  }, club.name), /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center gap-4 flex-wrap"
+  }, /*#__PURE__*/React.createElement(Badge, {
+    className: "bg-white/20 text-white text-lg px-4 py-2"
+  }, /*#__PURE__*/React.createElement(Users, {
+    className: "w-4 h-4 mr-2 inline"
+  }), club.memberCount || 0, " Members"), /*#__PURE__*/React.createElement(Badge, {
+    className: "bg-white/20 text-white text-lg px-4 py-2 capitalize"
+  }, club.category || "General")))), /*#__PURE__*/React.createElement("div", {
+    className: "max-w-3xl"
+  }, /*#__PURE__*/React.createElement("p", {
+    className: "text-lg text-white/90 mb-6"
+  }, club.description || "No description available")))), /*#__PURE__*/React.createElement("section", {
+    className: "py-12 px-4 bg-background"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "container mx-auto"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "grid grid-cols-1 lg:grid-cols-3 gap-8"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "lg:col-span-2 space-y-8"
+  }, /*#__PURE__*/React.createElement(Card, {
+    className: "bg-white dark:bg-slate-900 border-slate-200"
+  }, /*#__PURE__*/React.createElement(CardHeader, null, /*#__PURE__*/React.createElement(CardTitle, {
+    className: "text-2xl flex items-center gap-2"
+  }, /*#__PURE__*/React.createElement(User, {
+    className: "w-5 h-5 text-primary"
+  }), "Contact Information")), /*#__PURE__*/React.createElement(CardContent, {
+    className: "space-y-6"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "space-y-4"
+  }, club.email && /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center gap-3 text-sm text-slate-700"
+  }, /*#__PURE__*/React.createElement(Mail, {
+    className: "w-4 h-4 text-primary"
+  }), /*#__PURE__*/React.createElement("a", {
+    href: `mailto:${club.email}`,
+    className: "hover:text-primary"
+  }, club.email)), club.phone && /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center gap-3 text-sm text-slate-700"
+  }, /*#__PURE__*/React.createElement(Phone, {
+    className: "w-4 h-4 text-primary"
+  }), /*#__PURE__*/React.createElement("a", {
+    href: `tel:${club.phone}`
+  }, club.phone)), club.location && /*#__PURE__*/React.createElement("div", {
+    className: "text-sm text-slate-700"
+  }, /*#__PURE__*/React.createElement("strong", null, "Location:"), " ", club.location), club.website && /*#__PURE__*/React.createElement("div", {
+    className: "text-sm"
+  }, /*#__PURE__*/React.createElement("a", {
+    href: club.website,
+    target: "_blank",
+    rel: "noopener noreferrer",
+    className: "text-primary hover:underline"
+  }, "Visit Website"))))), club.socialLinks && (club.socialLinks.instagram || club.socialLinks.linkedin || club.socialLinks.twitter || club.socialLinks.facebook) && /*#__PURE__*/React.createElement(Card, {
+    className: "bg-white dark:bg-slate-900 border-slate-200"
+  }, /*#__PURE__*/React.createElement(CardHeader, null, /*#__PURE__*/React.createElement(CardTitle, {
+    className: "text-2xl flex items-center gap-2"
+  }, "Social Media")), /*#__PURE__*/React.createElement(CardContent, {
+    className: "space-y-3"
+  }, club.socialLinks.instagram && /*#__PURE__*/React.createElement("a", {
+    href: club.socialLinks.instagram,
+    target: "_blank",
+    rel: "noopener noreferrer",
+    className: "flex items-center gap-3 p-3 rounded-lg bg-slate-50 hover:bg-slate-100 transition-all"
+  }, /*#__PURE__*/React.createElement(Instagram, {
+    className: "w-5 h-5 text-pink-600"
+  }), /*#__PURE__*/React.createElement("span", {
+    className: "text-sm font-medium text-slate-700"
+  }, "Instagram")), club.socialLinks.linkedin && /*#__PURE__*/React.createElement("a", {
+    href: club.socialLinks.linkedin,
+    target: "_blank",
+    rel: "noopener noreferrer",
+    className: "flex items-center gap-3 p-3 rounded-lg bg-slate-50 hover:bg-slate-100 transition-all"
+  }, /*#__PURE__*/React.createElement(Linkedin, {
+    className: "w-5 h-5 text-blue-700"
+  }), /*#__PURE__*/React.createElement("span", {
+    className: "text-sm font-medium text-slate-700"
+  }, "LinkedIn")), club.socialLinks.twitter && /*#__PURE__*/React.createElement("a", {
+    href: club.socialLinks.twitter,
+    target: "_blank",
+    rel: "noopener noreferrer",
+    className: "flex items-center gap-3 p-3 rounded-lg bg-slate-50 hover:bg-slate-100 transition-all"
+  }, /*#__PURE__*/React.createElement(MessageCircle, {
+    className: "w-5 h-5 text-blue-500"
+  }), /*#__PURE__*/React.createElement("span", {
+    className: "text-sm font-medium text-slate-700"
+  }, "Twitter")), club.socialLinks.facebook && /*#__PURE__*/React.createElement("a", {
+    href: club.socialLinks.facebook,
+    target: "_blank",
+    rel: "noopener noreferrer",
+    className: "flex items-center gap-3 p-3 rounded-lg bg-slate-50 hover:bg-slate-100 transition-all"
+  }, /*#__PURE__*/React.createElement(MessageCircle, {
+    className: "w-5 h-5 text-blue-600"
+  }), /*#__PURE__*/React.createElement("span", {
+    className: "text-sm font-medium text-slate-700"
+  }, "Facebook"))))), /*#__PURE__*/React.createElement("div", {
+    className: "space-y-6"
+  }, /*#__PURE__*/React.createElement(Card, {
+    className: "bg-gradient-to-br from-primary/10 to-primary/5 border-primary/20"
+  }, /*#__PURE__*/React.createElement(CardHeader, null, /*#__PURE__*/React.createElement(CardTitle, {
+    className: "text-lg"
+  }, "Club Status")), /*#__PURE__*/React.createElement(CardContent, {
+    className: "space-y-4"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "text-center"
+  }, /*#__PURE__*/React.createElement(Badge, {
+    className: `text-lg px-4 py-2 ${club.status === 'active' ? 'bg-green-500' : club.status === 'inactive' ? 'bg-gray-500' : 'bg-red-500'}`
+  }, club.status?.toUpperCase() || 'ACTIVE')))), /*#__PURE__*/React.createElement(Button, {
+    onClick: () => !isMember && navigate(`/club/${club._id || club.id}/join`),
+    className: `w-full py-6 text-lg font-semibold ${isMember ? 'bg-gray-400 cursor-not-allowed' : 'bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70'} text-white`,
+    disabled: club.status !== 'active' || isMember
+  }, isMember ? '✓ Already Joined' : club.status === 'active' ? `Join ${club.name}` : 'Club Inactive'), /*#__PURE__*/React.createElement(Card, {
+    className: "bg-white dark:bg-slate-900 border-slate-200"
+  }, /*#__PURE__*/React.createElement(CardContent, {
+    className: "pt-6"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "space-y-4"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "text-center pb-4 border-b border-slate-200"
+  }, /*#__PURE__*/React.createElement("p", {
+    className: "text-3xl font-bold text-primary"
+  }, club.memberCount || 0), /*#__PURE__*/React.createElement("p", {
+    className: "text-sm text-slate-600"
+  }, "Members")), /*#__PURE__*/React.createElement("div", {
+    className: "text-center"
+  }, /*#__PURE__*/React.createElement("p", {
+    className: "text-3xl font-bold text-accent capitalize"
+  }, club.category || "General"), /*#__PURE__*/React.createElement("p", {
+    className: "text-sm text-slate-600"
+  }, "Category")))))))))), /*#__PURE__*/React.createElement(Footer, null));
+}
